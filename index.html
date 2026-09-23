@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Bench calculator that turns a measured gravity drip rate into a duty-cycle dosing schedule reproducing one-compartment pharmacokinetics in a fed-batch culture vessel.">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  body{margin:0;font-family:system-ui,sans-serif;background:#eef1f0;}
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+</style>
+<title>Drip Schedule Builder</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#eef1f0;
+    --surface:#ffffff;
+    --surface-2:#f6f8f7;
+    --line:#d3dbd9;
+    --line-strong:#b3bfbc;
+    --ink:#141d21;
+    --ink-2:#48585d;
+    --ink-3:#74858a;
+    --accent:#0d6f78;
+    --accent-soft:#d9ecee;
+    --warn:#9a5a06;
+    --warn-soft:#f8ecd9;
+    --bad:#9e2437;
+    --bad-soft:#f8e2e5;
+    --good:#2f6b3a;
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0c1214;
+      --surface:#141d21;
+      --surface-2:#1a252a;
+      --line:#27353a;
+      --line-strong:#3b4d53;
+      --ink:#e4ecea;
+      --ink-2:#a6b6b8;
+      --ink-3:#7c8d90;
+      --accent:#4cc0c9;
+      --accent-soft:#12383c;
+      --warn:#e2a049;
+      --warn-soft:#3a2c14;
+      --bad:#e88293;
+      --bad-soft:#3a1b21;
+      --good:#7dc08a;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0c1214;
+    --surface:#141d21;
+    --surface-2:#1a252a;
+    --line:#27353a;
+    --line-strong:#3b4d53;
+    --ink:#e4ecea;
+    --ink-2:#a6b6b8;
+    --ink-3:#7c8d90;
+    --accent:#4cc0c9;
+    --accent-soft:#12383c;
+    --warn:#e2a049;
+    --warn-soft:#3a2c14;
+    --bad:#e88293;
+    --bad-soft:#3a1b21;
+    --good:#7dc08a;
+  }
+
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"Archivo", ui-sans-serif, system-ui, sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;}
+  h1,h2,h3{text-wrap:balance;margin:0;}
+  .eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  h1{font-size:clamp(26px,5vw,38px);font-weight:700;letter-spacing:-.02em;margin-top:6px;}
+  .lede{color:var(--ink-2);max-width:62ch;margin-top:10px;}
+  .lede code{font-family:"IBM Plex Mono",monospace;font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
+
+  section{margin-top:34px;}
+  h2{font-size:19px;font-weight:600;letter-spacing:-.01em;}
+  .sechead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:12px;}
+  .sechead p{margin:0;color:var(--ink-3);font-size:13px;}
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+
+  /* ---- inputs ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:12px;color:var(--ink-2);font-weight:500;}
+  .field .unit{color:var(--ink-3);font-weight:400;}
+  .field input,.field select{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:15px;font-weight:500;
+    background:var(--surface-2);
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:8px 9px;
+    width:100%;
+    min-width:0;
+  }
+  .field input:focus-visible,.field select:focus-visible,button:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+  .hint{font-size:11.5px;color:var(--ink-3);line-height:1.35;}
+
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;
+    background:transparent;color:var(--ink-2);
+    border:1px solid var(--line);border-radius:999px;
+    padding:3px 10px;cursor:pointer;
+  }
+  .presets button:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ---- readout ---- */
+  .readout{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-top:14px;}
+  @media (max-width:620px){ .readout{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:380px){ .readout{grid-template-columns:1fr;} }
+  .stat{background:var(--surface);padding:13px 14px;}
+  .stat dt{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;}
+  .stat dd{margin:4px 0 0;font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+  .stat dd small{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:3px;}
+
+  .verdict{
+    display:flex;gap:11px;align-items:flex-start;
+    border-radius:var(--radius);padding:13px 15px;margin-top:14px;
+    font-size:14px;line-height:1.45;
+    border:1px solid transparent;
+  }
+  .verdict .tag{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+    letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
+    padding-top:2px;
+  }
+  .verdict p{margin:0;}
+  .verdict + .verdict{margin-top:8px;}
+  .v-ok{background:var(--surface);border-color:var(--line);}
+  .v-ok .tag{color:var(--good);}
+  .v-warn{background:var(--warn-soft);border-color:var(--warn);}
+  .v-warn .tag{color:var(--warn);}
+  .v-bad{background:var(--bad-soft);border-color:var(--bad);}
+  .v-bad .tag{color:var(--bad);}
+
+  /* ---- chart ---- */
+  figure{margin:0;}
+  figcaption{font-size:12.5px;color:var(--ink-3);margin-top:9px;}
+  .chartbox{width:100%;}
+  svg{display:block;width:100%;height:auto;max-width:100%;}
+  .keyrow{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--ink-2);margin-bottom:10px;font-family:"IBM Plex Mono",monospace;}
+  .keyrow span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:16px;height:3px;border-radius:2px;display:inline-block;}
+
+  /* ---- tables ---- */
+  .tablewrap{overflow-x:auto;max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);}
+  table{border-collapse:collapse;width:100%;font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;}
+  thead th{
+    position:sticky;top:0;z-index:1;
+    background:var(--surface-2);
+    text-align:right;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-2);
+    padding:9px 11px;border-bottom:1px solid var(--line-strong);white-space:nowrap;
+  }
+  thead th:first-child{text-align:left;}
+  tbody td{padding:7px 11px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td:first-child{text-align:left;color:var(--ink-3);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.over td{background:var(--bad-soft);}
+  .drops{font-weight:600;color:var(--accent);}
+
+  .tabs{display:flex;gap:6px;margin-bottom:11px;flex-wrap:wrap;}
+  .tabs button{
+    font-family:"Archivo",sans-serif;font-size:13px;font-weight:500;
+    background:var(--surface);color:var(--ink-2);
+    border:1px solid var(--line);border-radius:7px;padding:6px 12px;cursor:pointer;
+  }
+  .tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+  :root[data-theme="dark"] .tabs button[aria-pressed="true"],
+  .tabs button[aria-pressed="true"]{color:var(--surface);}
+
+  .note{font-size:13px;color:var(--ink-2);line-height:1.55;max-width:70ch;}
+  .note strong{color:var(--ink);font-weight:600;}
+  .note + .note{margin-top:9px;}
+  ol.steps{margin:0;padding-left:20px;font-size:13.5px;color:var(--ink-2);line-height:1.6;}
+  ol.steps li{margin-bottom:7px;}
+  ol.steps li::marker{color:var(--accent);font-family:"IBM Plex Mono",monospace;font-weight:600;}
+  ol.steps strong{color:var(--ink);font-weight:600;}
+  kbd{font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+
+  .eq{
+    font-family:"IBM Plex Mono",monospace;font-size:13px;
+    background:var(--surface-2);border-left:3px solid var(--accent);
+    padding:10px 13px;border-radius:0 7px 7px 0;margin:11px 0;
+    overflow-x:auto;color:var(--ink);
+  }
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3);}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Fed-batch PK simulation · no outflow</div>
+    <h1>Drip Schedule Builder</h1>
+    <p class="lede">You set the clamp, count drops for a minute, and type the number you actually got. Everything downstream &mdash; duty cycles, drop counts per step, achievable half&#8209;lives &mdash; is recomputed from <em>your</em> measured rate rather than a nominal one.</p>
+  </header>
+
+  <section>
+    <div class="sechead">
+      <h2>1 · Bench measurements</h2>
+      <p>Measure first, then read the consequences below.</p>
+    </div>
+    <div class="panel">
+      <div class="grid">
+        <div class="field">
+          <label for="n">Measured rate <span class="unit">gtt/min</span></label>
+          <input id="n" type="number" value="120" min="1" step="1">
+          <div class="presets" id="presets"></div>
+        </div>
+        <div class="field">
+          <label for="D">Drop factor <span class="unit">gtt/mL</span></label>
+          <input id="D" type="number" value="60" min="1" step="1">
+          <div class="hint">Calibrate: count 100 drops into a tared vessel, weigh. D = 100 &divide; grams.</div>
+        </div>
+        <div class="field">
+          <label for="V0">Starting volume <span class="unit">mL</span></label>
+          <input id="V0" type="number" value="100" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="R">Stock strength <span class="unit">&times; target</span></label>
+          <input id="R" type="number" value="20" min="1.05" step="0.5">
+          <div class="hint">20 &times; target &rarr; only ~5% volume added over the whole rise.</div>
+        </div>
+        <div class="field">
+          <label for="T1">Absorption t&frac12; <span class="unit">min</span></label>
+          <input id="T1" type="number" value="20" min="0.5" step="1">
+        </div>
+        <div class="field">
+          <label for="T2">Elimination t&frac12; <span class="unit">min</span></label>
+          <input id="T2" type="number" value="90" min="0.5" step="1">
+        </div>
+        <div class="field">
+          <label for="dt">Control interval <span class="unit">min</span></label>
+          <input id="dt" type="number" value="10" min="0.5" step="1">
+          <div class="hint">How often you touch the clamp. Shorter = smoother curve, more bench work.</div>
+        </div>
+        <div class="field">
+          <label for="dur">Decay run time <span class="unit">&times; t&frac12;</span></label>
+          <input id="dur" type="number" value="4" min="1" max="8" step="1">
+        </div>
+      </div>
+    </div>
+
+    <dl class="readout" id="readout"></dl>
+    <div id="verdicts"></div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>2 · What this rate can actually do</h2>
+      <p>Ceilings implied by your measured flow.</p>
+    </div>
+    <div class="panel">
+      <p class="note" id="ceilings"></p>
+      <div class="tablewrap" style="margin-top:14px;max-height:none;">
+        <table id="ceilTable">
+          <thead><tr><th>If you measure</th><th>q (mL/min)</th><th>Fastest elim t&frac12;</th><th>Fastest abs t&frac12;</th><th>Duty at your targets</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:12px;">&ldquo;Fastest&rdquo; = the shortest half&#8209;life reachable while keeping the clamp open no more than 70% of each interval, at your current volume and stock strength. Below that duty you have no headroom for a slow drop or a partially occluded line.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>3 · Predicted curve</h2>
+      <p>Staircase = what your schedule delivers. Dashed = the ideal kinetics.</p>
+    </div>
+    <div class="panel">
+      <figure>
+        <div class="keyrow">
+          <span><i class="swatch" style="background:var(--accent)"></i> Delivered by schedule</span>
+          <span><i class="swatch" style="background:var(--ink-3)"></i> Ideal one-compartment curve</span>
+        </div>
+        <div class="chartbox" id="chart"></div>
+        <figcaption id="chartcap"></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>4 · Phase A &mdash; rising drug</h2>
+      <p>Drug stock into the vessel. Clamp open for the listed time each interval, then closed.</p>
+    </div>
+    <div class="panel" style="padding-bottom:14px;">
+      <p class="note" style="margin-bottom:13px;">Count <strong>drops</strong>, not seconds &mdash; drop counting is self-correcting if the head pressure drifts. The seconds column is a sanity check on pace.</p>
+      <div class="tablewrap">
+        <table id="phaseA">
+          <thead><tr><th>Interval</th><th>Open for (s)</th><th class="drops">Drops to count</th><th>mL this step</th><th>Duty</th><th>Vol (mL)</th><th>% of peak</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:12px;" id="phaseAsum"></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>5 · Phase B &mdash; falling drug</h2>
+      <p>Two ways to get exponential decay with no outflow pump.</p>
+    </div>
+    <div class="tabs" role="group" aria-label="Decay method">
+      <button id="modeEx" aria-pressed="true">Exchange &mdash; constant volume</button>
+      <button id="modeDil" aria-pressed="false">Dilution only &mdash; growing volume</button>
+    </div>
+    <div class="panel" style="padding-bottom:14px;">
+      <p class="note" id="modeNote" style="margin-bottom:13px;"></p>
+      <div class="tablewrap">
+        <table id="phaseB">
+          <thead><tr><th>Interval</th><th>Remove (mL)</th><th>Open for (s)</th><th class="drops">Drops to count</th><th>Duty</th><th>Vol (mL)</th><th>% of peak</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:12px;" id="phaseBsum"></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>6 · Bench procedure</h2></div>
+    <div class="panel">
+      <ol class="steps">
+        <li><strong>Calibrate the drop factor once per tubing lot.</strong> Count 100 drops of your actual diluent into a tared tube and weigh it. Viscous or surfactant-containing media give drops well off the nominal 60 gtt/mL; using the number on the box is the largest avoidable error in this whole protocol.</li>
+        <li><strong>Set the clamp, then count.</strong> Count drops for a full 60&nbsp;s twice and average. Type that number into the rate field &mdash; do not type the rate you were aiming for.</li>
+        <li><strong>Re-count at every interval.</strong> Gravity head falls as the reservoir empties, so the rate drifts down over a long run. If the count has moved more than ~10%, retype it and the remaining schedule recomputes.</li>
+        <li><strong>Run Phase A by drop count.</strong> Open the clamp, count the listed drops, close it. Mix between steps &mdash; the model assumes the vessel is well mixed within each interval.</li>
+        <li><strong>At peak, switch reservoirs</strong> from drug stock to plain diluent. Note the time; that is <kbd>t = 0</kbd> for Phase B.</li>
+        <li><strong>Run Phase B.</strong> In exchange mode, withdraw the listed volume <em>first</em>, then replace it by counting drops. Withdrawing first keeps the volume from transiently rising and is the natural place to take your timed sample.</li>
+        <li><strong>Verify with assay, not arithmetic.</strong> Pull a sample at peak and at 1&ndash;2 half&#8209;lives, assay drug concentration, and fit the actual k. Report the measured k, not the intended one.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>7 · The math being used</h2></div>
+    <div class="panel">
+      <p class="note">With nothing leaving the vessel, concentration is mass over a moving volume, so both phases are volume bookkeeping.</p>
+      <div class="eq">q = n / D          mL/min from n drops/min at D gtt/mL</div>
+      <p class="note"><strong>Phase A.</strong> All added drug stays, so cumulative added volume Q and concentration are locked together. With f = 1/R the target-to-stock ratio and u = 1 &minus; e<sup>&minus;k<sub>a</sub>t</sup>:</p>
+      <div class="eq">C(t) = C_stock &middot; Q / (V&#8320; + Q)        &rarr;        Q(t) = V&#8320; &middot; f &middot; u / (1 &minus; f &middot; u)</div>
+      <p class="note">Each interval delivers the difference in Q. Because f is small, the required flow is very nearly V&#8320;&middot;f&middot;k<sub>a</sub>&middot;e<sup>&minus;k<sub>a</sub>t</sup> &mdash; it <strong>halves every absorption half&#8209;time</strong>, which is the shape of the Phase A table.</p>
+      <p class="note"><strong>Phase B, exchange.</strong> Remove and replace a fixed fraction each interval; volume is constant and concentration falls geometrically:</p>
+      <div class="eq">&Delta;V / V = 1 &minus; e<sup>&minus;k&#8337;&middot;&Delta;t</sup></div>
+      <p class="note"><strong>Phase B, dilution only.</strong> Mass is fixed, so C = M/V and exponential decay demands exponential volume growth &mdash; the vessel doubles every half&#8209;life, and cells dilute at exactly k&#8337;, confounding your CFU counts with the clearance you are trying to impose:</p>
+      <div class="eq">V(t) = V_peak &middot; e<sup>+k&#8337;&middot;t</sup>        q(t) = k&#8337; &middot; V(t)</div>
+    </div>
+  </section>
+
+  <footer>
+    Fed-batch approximation of one-compartment kinetics. Assumes complete mixing within each interval, no drug binding to vessel or tubing, and no degradation. Validate against assayed concentrations before treating the nominal half&#8209;life as real.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var LN2 = Math.LN2;
+  var ids = ["n","D","V0","R","T1","T2","dt","dur"];
+  var el = {};
+  ids.forEach(function(k){ el[k] = document.getElementById(k); });
+  var mode = "exchange";
+
+  // restore per-viewer convenience
+  try{
+    var saved = JSON.parse(localStorage.getItem("dripsched")||"null");
+    if(saved){ ids.forEach(function(k){ if(saved[k]!=null) el[k].value = saved[k]; });
+               if(saved.mode) mode = saved.mode; }
+  }catch(e){}
+
+  function save(){
+    try{
+      var o = {mode:mode};
+      ids.forEach(function(k){ o[k] = el[k].value; });
+      localStorage.setItem("dripsched", JSON.stringify(o));
+    }catch(e){}
+  }
+
+  // preset chips
+  var PRESETS = [240,180,120,60,30,15];
+  var pc = document.getElementById("presets");
+  PRESETS.forEach(function(v){
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = v;
+    b.addEventListener("click", function(){ el.n.value = v; run(); });
+    pc.appendChild(b);
+  });
+
+  function num(k, min, fallback){
+    var v = parseFloat(el[k].value);
+    if(!isFinite(v) || v < min) return fallback;
+    return v;
+  }
+
+  function fmt(x, p){
+    if(!isFinite(x)) return "—";
+    return x.toFixed(p==null?2:p);
+  }
+  // A ceiling at or below one minute means the clamp is nowhere near the
+  // constraint — report that, rather than a meaningless "0 min".
+  function halfLabel(x){
+    if(!isFinite(x)) return "unreachable";
+    if(x <= 1) return "not limiting";
+    return fmt(x,0) + " min";
+  }
+  function mins(x){
+    if(!isFinite(x) || x<=0) return "—";
+    if(x < 90) return fmt(x,0) + " min";
+    return fmt(x/60,1) + " h";
+  }
+
+  function model(){
+    var n  = num("n",0.1,120),
+        D  = num("D",1,60),
+        V0 = num("V0",0.1,100),
+        R  = num("R",1.05,20),
+        T1 = num("T1",0.1,20),
+        T2 = num("T2",0.1,90),
+        dt = num("dt",0.1,10),
+        dur= num("dur",1,4);
+
+    var q  = n/D;             // mL/min
+    var f  = 1/R;
+    var ka = LN2/T1;
+    var ke = LN2/T2;
+
+    // ---- Phase A ----
+    function Qof(t){ var u = 1 - Math.exp(-ka*t); return V0*f*u/(1-f*u); }
+    var tEndA = Math.ceil((4*T1)/dt)*dt;
+    var stepsA = Math.min(Math.round(tEndA/dt), 400);
+    var A = [], vol = V0, delivered = 0, maxDutyA = 0;
+    for(var i=0;i<stepsA;i++){
+      var t0 = i*dt, t1 = (i+1)*dt;
+      var dQ = Qof(t1) - Qof(t0);
+      var drops = Math.round(dQ*D);
+      var actual = drops/D;
+      var onMin = actual/q;
+      var duty = onMin/dt;
+      if(duty > maxDutyA) maxDutyA = duty;
+      delivered += actual; vol = V0 + delivered;
+      A.push({
+        t0:t0, t1:t1, drops:drops, mL:actual, on:onMin*60, duty:duty,
+        vol:vol,
+        pct: 100*(f*delivered/(V0+delivered))/ (f*Qof(1e6)/(V0+Qof(1e6))) // normalised below
+      });
+    }
+    // normalise % of peak against the concentration actually reached at end of A
+    var Cend = delivered/(V0+delivered);       // proportional to C/C_stock
+    var cum = 0;
+    A.forEach(function(r){
+      cum += r.mL;
+      r.pct = Cend>0 ? 100*(cum/(V0+cum))/Cend : 0;
+    });
+    var Vpeak = V0 + delivered;
+
+    // ---- Phase B ----
+    var tEndB = dur*T2;
+    var stepsB = Math.min(Math.round(tEndB/dt), 400);
+    var B = [], maxDutyB = 0, sustained = tEndB, brokeAt = null;
+    if(mode === "exchange"){
+      var dV = Vpeak*(1 - Math.exp(-ke*dt));
+      var dropsB = Math.round(dV*D);
+      var actB = dropsB/D;
+      var onB = actB/q, dutyB = onB/dt;
+      maxDutyB = dutyB;
+      var C = 1;
+      for(var j=0;j<stepsB;j++){
+        C = C * (1 - actB/Vpeak);
+        B.push({t0:j*dt, t1:(j+1)*dt, rm:actB, on:onB*60, drops:dropsB,
+                duty:dutyB, vol:Vpeak, pct:100*C});
+      }
+      if(dutyB > 1){ brokeAt = 0; sustained = 0; }
+    } else {
+      var V = Vpeak, M = 1;
+      for(var m=0;m<stepsB;m++){
+        var ta = m*dt, tb = (m+1)*dt;
+        var dVm = Vpeak*(Math.exp(ke*tb) - Math.exp(ke*ta));
+        var dr = Math.round(dVm*D);
+        var act = dr/D;
+        var on = act/q, duty = on/dt;
+        if(duty > maxDutyB) maxDutyB = duty;
+        if(duty > 1 && brokeAt === null){ brokeAt = ta; sustained = ta; }
+        V = V + act;
+        B.push({t0:ta, t1:tb, rm:0, on:on*60, drops:dr, duty:duty,
+                vol:V, pct:100*(Vpeak/V)});
+      }
+    }
+
+    // ---- ceilings at 70% duty ----
+    // Phase A binding constraint: first interval.
+    // dQ over first dt <= 0.7*q*dt  -> solve for ka numerically
+    function dutyA_for(kaX){
+      function Qx(t){ var u=1-Math.exp(-kaX*t); return V0*f*u/(1-f*u); }
+      return (Qx(dt)-Qx(0))/(q*dt);
+    }
+    var minT1 = solveHalf(function(T){ return dutyA_for(LN2/T) - 0.7; }, 0.05, 6000);
+    // Phase B exchange: Vpeak*(1-exp(-ke*dt)) <= 0.7*q*dt
+    var cap = 0.7*q*dt/Vpeak;
+    var minT2 = cap >= 1 ? 0 : LN2*dt / (-Math.log(1-cap));
+
+    return {n:n,D:D,V0:V0,R:R,f:f,T1:T1,T2:T2,dt:dt,dur:dur,q:q,ka:ka,ke:ke,
+            A:A,B:B,Vpeak:Vpeak,added:delivered,maxDutyA:maxDutyA,maxDutyB:maxDutyB,
+            minT1:minT1,minT2:minT2,brokeAt:brokeAt,sustained:sustained,tEndA:tEndA,tEndB:tEndB};
+  }
+
+  // monotonic bisection: g(T) decreasing in T, find g(T)=0
+  function solveHalf(g, lo, hi){
+    var a=lo,b=hi;
+    if(g(a) < 0) return a;
+    if(g(b) > 0) return Infinity;
+    for(var i=0;i<80;i++){
+      var mid=(a+b)/2;
+      if(g(mid) > 0) a=mid; else b=mid;
+    }
+    return (a+b)/2;
+  }
+
+  // ---------- rendering ----------
+  function renderReadout(M){
+    var r = document.getElementById("readout");
+    var items = [
+      ["Flow", fmt(M.q,3), "mL/min"],
+      ["Peak volume", fmt(M.Vpeak,1), "mL"],
+      ["Drug stock added", fmt(M.added,1), "mL"],
+      ["Max duty, phase A", fmt(M.maxDutyA*100,0)+"%", ""],
+      ["Max duty, phase B", fmt(M.maxDutyB*100,0)+"%", ""],
+      ["Total run", mins(M.tEndA + M.tEndB), ""]
+    ];
+    r.innerHTML = items.map(function(it){
+      return '<div class="stat"><dt>'+it[0]+'</dt><dd>'+it[1]+
+             (it[2]?'<small>'+it[2]+'</small>':'')+'</dd></div>';
+    }).join("");
+  }
+
+  function verdict(cls, tag, text){
+    return '<div class="verdict v-'+cls+'"><span class="tag">'+tag+'</span><p>'+text+'</p></div>';
+  }
+
+  function renderVerdicts(M){
+    var out = [];
+    if(M.maxDutyA > 1){
+      out.push(verdict("bad","Phase A fails",
+        "The first interval needs the clamp open <strong>"+fmt(M.maxDutyA*100,0)+"%</strong> of "+fmt(M.dt,0)+
+        " min &mdash; more time than the interval contains. At "+M.n+" gtt/min the fastest absorption t&frac12; you can build is <strong>"+
+        halfLabel(M.minT1)+
+        "</strong>. Raise the drop rate, use a stronger stock, shorten the interval, or accept a slower rise."));
+    } else if(M.maxDutyA > 0.7){
+      out.push(verdict("warn","Phase A tight",
+        "Peak duty <strong>"+fmt(M.maxDutyA*100,0)+"%</strong> leaves little slack for rate drift. Workable, but re-count drops every interval."));
+    } else {
+      out.push(verdict("ok","Phase A clear",
+        "Peak duty <strong>"+fmt(M.maxDutyA*100,0)+"%</strong> &mdash; comfortable headroom if the gravity head drifts."));
+    }
+
+    if(mode === "exchange"){
+      if(M.maxDutyB > 1){
+        out.push(verdict("bad","Phase B fails",
+          "Replacing "+fmt(M.B.length?M.B[0].rm:0,1)+" mL takes longer than the "+fmt(M.dt,0)+
+          " min interval. Fastest elimination t&frac12; at this rate and volume is <strong>"+
+          halfLabel(M.minT2)+"</strong>."));
+      } else {
+        out.push(verdict(M.maxDutyB>0.7?"warn":"ok","Phase B clear",
+          "Constant volume at <strong>"+fmt(M.Vpeak,1)+" mL</strong>, duty <strong>"+fmt(M.maxDutyB*100,0)+
+          "%</strong> every interval. Cell losses are a flat "+fmt(100*(M.B.length?M.B[0].rm:0)/M.Vpeak,1)+
+          "% per step &mdash; constant and trivially correctable rather than compounding."));
+      }
+    } else {
+      var finalV = M.B.length ? M.B[M.B.length-1].vol : M.Vpeak;
+      if(M.brokeAt !== null){
+        out.push(verdict("bad","Phase B runs out",
+          "Demand outgrows your drop rate at <strong>t = "+fmt(M.brokeAt,0)+" min</strong> ("+
+          fmt(M.brokeAt/M.T2,1)+" half&#8209;lives). Volume would reach "+fmt(finalV,0)+
+          " mL by the end of the run. This is the structural cost of no outflow &mdash; use exchange mode."));
+      } else {
+        out.push(verdict("warn","Phase B feasible, costly",
+          "The vessel grows from "+fmt(M.Vpeak,0)+" to <strong>"+fmt(finalV,0)+
+          " mL</strong>. Cells dilute at exactly k&#8337;, so every CFU count needs correcting by V(t)/V_peak and any growth slower than k&#8337; will read as killing."));
+      }
+    }
+    document.getElementById("verdicts").innerHTML = out.join("");
+  }
+
+  function renderCeilings(M){
+    var body = document.querySelector("#ceilTable tbody");
+    var rates = PRESETS.slice();
+    if(rates.indexOf(M.n) === -1){ rates.push(M.n); rates.sort(function(a,b){return b-a;}); }
+    body.innerHTML = rates.map(function(nn){
+      var q = nn/M.D;
+      var capB = 0.7*q*M.dt/M.Vpeak;
+      var t2 = capB >= 1 ? 0 : LN2*M.dt/(-Math.log(1-capB));
+      function dutyA(kaX){
+        function Qx(t){ var u=1-Math.exp(-kaX*t); return M.V0*M.f*u/(1-M.f*u); }
+        return (Qx(M.dt)-Qx(0))/(q*M.dt);
+      }
+      var t1 = solveHalf(function(T){ return dutyA(LN2/T)-0.7; }, 0.05, 6000);
+      var dutyNow = Math.max(dutyA(M.ka), M.Vpeak*(1-Math.exp(-M.ke*M.dt))/(q*M.dt));
+      var cls = dutyNow > 1 ? ' style="color:var(--bad);font-weight:600"' :
+                (dutyNow > 0.7 ? ' style="color:var(--warn);font-weight:600"' : '');
+      var mark = nn === M.n ? ' style="color:var(--accent);font-weight:600"' : '';
+      return "<tr><td"+mark+">"+nn+" gtt/min"+(nn===M.n?" ← yours":"")+"</td><td>"+fmt(q,3)+
+             "</td><td>"+halfLabel(t2)+"</td><td>"+halfLabel(t1)+
+             "</td><td"+cls+">"+fmt(dutyNow*100,0)+"%</td></tr>";
+    }).join("");
+
+    document.getElementById("ceilings").innerHTML =
+      "At <strong>"+M.n+" gtt/min</strong> through a "+M.D+" gtt/mL set you are delivering <strong>"+
+      fmt(M.q,3)+" mL/min</strong>. Against "+fmt(M.Vpeak,0)+" mL and a "+fmt(M.dt,0)+
+      " min interval, the fastest elimination half&#8209;life you can hold at &le;70% duty is <strong>"+
+      halfLabel(M.minT2)+"</strong>, and the fastest absorption half&#8209;time is <strong>"+
+      halfLabel(M.minT1)+"</strong>. With a "+fmt(M.R,0)+
+      "&times; stock, Phase A asks so little flow that it is rarely the binding constraint &mdash; Phase B almost always is.";
+  }
+
+  function renderTables(M){
+    var a = document.querySelector("#phaseA tbody");
+    a.innerHTML = M.A.map(function(r,i){
+      return '<tr'+(r.duty>1?' class="over"':'')+'><td>'+fmt(r.t0,0)+'–'+fmt(r.t1,0)+' min</td>'+
+        '<td>'+fmt(r.on,0)+'</td><td class="drops">'+r.drops+'</td><td>'+fmt(r.mL,2)+'</td>'+
+        '<td>'+fmt(r.duty*100,0)+'%</td><td>'+fmt(r.vol,1)+'</td><td>'+fmt(r.pct,1)+'%</td></tr>';
+    }).join("");
+    document.getElementById("phaseAsum").innerHTML =
+      "Phase A runs <strong>"+mins(M.tEndA)+"</strong> and adds <strong>"+fmt(M.added,2)+
+      " mL</strong> (" + fmt(100*M.added/M.V0,1) + "% of starting volume), ending at "+fmt(M.Vpeak,1)+
+      " mL and ~94% of the plateau. Note the drop count roughly halves every "+fmt(M.T1,0)+
+      " min — that halving <em>is</em> the exponential rise.";
+
+    var b = document.querySelector("#phaseB tbody");
+    b.innerHTML = M.B.map(function(r){
+      return '<tr'+(r.duty>1?' class="over"':'')+'><td>'+fmt(r.t0,0)+'–'+fmt(r.t1,0)+' min</td>'+
+        '<td>'+(r.rm>0?fmt(r.rm,2):'—')+'</td><td>'+fmt(r.on,0)+'</td>'+
+        '<td class="drops">'+r.drops+'</td><td>'+fmt(r.duty*100,0)+'%</td>'+
+        '<td>'+fmt(r.vol,1)+'</td><td>'+fmt(r.pct,1)+'%</td></tr>';
+    }).join("");
+
+    var lastB = M.B.length ? M.B[M.B.length-1] : null;
+    document.getElementById("phaseBsum").innerHTML = mode === "exchange"
+      ? "Every interval is identical: withdraw <strong>"+fmt(M.B.length?M.B[0].rm:0,2)+
+        " mL</strong>, replace by counting <strong>"+(M.B.length?M.B[0].drops:0)+
+        " drops</strong>. After "+mins(M.tEndB)+" the drug is at "+fmt(lastB?lastB.pct:0,1)+
+        "% of peak and the volume has not moved."
+      : "Demand climbs geometrically: the last interval needs <strong>"+(lastB?lastB.drops:0)+
+        " drops</strong> against "+(M.B.length?M.B[0].drops:0)+" in the first, and the vessel ends at <strong>"+
+        fmt(lastB?lastB.vol:0,0)+" mL</strong>.";
+
+    document.getElementById("modeNote").innerHTML = mode === "exchange"
+      ? "Withdraw a fixed fraction and replace it with diluent. Volume stays at "+fmt(M.Vpeak,1)+
+        " mL, drug falls geometrically, and the withdrawal is your timed sample &mdash; no extra handling. <strong>This is the method to use.</strong>"
+      : "Add diluent only, never remove. Concentration falls because volume rises, so the vessel must <strong>double every half&#8209;life</strong>. Shown for comparison; it is rarely practical past two half&#8209;lives.";
+  }
+
+  // ---------- chart ----------
+  function renderChart(M){
+    var W = 760, H = 300, padL = 52, padR = 18, padT = 16, padB = 40;
+    var iw = W-padL-padR, ih = H-padT-padB;
+    var tMax = M.tEndA + M.tEndB;
+    var x = function(t){ return padL + iw*(t/tMax); };
+    var y = function(p){ return padT + ih*(1 - p/105); };
+
+    // ideal curve, scaled so its own peak is 100
+    var idealRaw = [], peakI = 0;
+    var NPTS = 320;
+    for(var i=0;i<=NPTS;i++){
+      var t = tMax*i/NPTS, v;
+      if(t <= M.tEndA){ v = 1 - Math.exp(-M.ka*t); }
+      else { v = (1-Math.exp(-M.ka*M.tEndA))*Math.exp(-M.ke*(t-M.tEndA)); }
+      if(v > peakI) peakI = v;
+      idealRaw.push([t,v]);
+    }
+    var idealPath = idealRaw.map(function(p,i){
+      return (i?"L":"M")+x(p[0]).toFixed(1)+" "+y(100*p[1]/peakI).toFixed(1);
+    }).join(" ");
+
+    // delivered staircase
+    var pts = [[0,0]];
+    M.A.forEach(function(r){ pts.push([r.t0, pts[pts.length-1][1]]); pts.push([r.t1, r.pct]); });
+    var base = M.tEndA;
+    var lastPct = M.A.length ? M.A[M.A.length-1].pct : 0;
+    M.B.forEach(function(r){
+      pts.push([base+r.t0, lastPct]);
+      lastPct = r.pct*(M.A.length ? M.A[M.A.length-1].pct : 100)/100;
+      pts.push([base+r.t1, lastPct]);
+    });
+    var stepPath = pts.map(function(p,i){
+      return (i?"L":"M")+x(p[0]).toFixed(1)+" "+y(Math.max(0,Math.min(105,p[1]))).toFixed(1);
+    }).join(" ");
+
+    // ticks
+    var yt = [0,25,50,75,100];
+    var tickStep = niceStep(tMax/6);
+    var xt = [];
+    for(var tv=0; tv<=tMax+0.001; tv+=tickStep) xt.push(tv);
+
+    var s = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Predicted drug concentration over time">';
+    yt.forEach(function(v){
+      s += '<line x1="'+padL+'" y1="'+y(v).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(v).toFixed(1)+
+           '" stroke="var(--line)" stroke-width="1"/>';
+      s += '<text x="'+(padL-9)+'" y="'+(y(v)+4).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
+           'font-family="IBM Plex Mono, monospace" font-size="11">'+v+'</text>';
+    });
+    xt.forEach(function(tv){
+      s += '<text x="'+x(tv).toFixed(1)+'" y="'+(H-padB+19)+'" text-anchor="middle" fill="var(--ink-3)" '+
+           'font-family="IBM Plex Mono, monospace" font-size="11">'+Math.round(tv)+'</text>';
+    });
+    // phase divider
+    s += '<line x1="'+x(M.tEndA).toFixed(1)+'" y1="'+padT+'" x2="'+x(M.tEndA).toFixed(1)+'" y2="'+(padT+ih)+
+         '" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="2 4"/>';
+    s += '<text x="'+(x(M.tEndA)+6).toFixed(1)+'" y="'+(padT+13)+'" fill="var(--ink-3)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="10.5">switch to diluent</text>';
+    // series
+    s += '<path d="'+idealPath+'" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="5 4"/>';
+    s += '<path d="'+stepPath+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>';
+    // axis labels
+    s += '<text x="'+padL+'" y="'+(H-6)+'" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace" font-size="11">minutes</text>';
+    s += '<text x="12" y="'+(padT+10)+'" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace" font-size="11">% peak</text>';
+    s += '</svg>';
+    document.getElementById("chart").innerHTML = s;
+
+    document.getElementById("chartcap").innerHTML =
+      "Rise to "+fmt(M.T1,0)+" min half&#8209;time, then decay at "+fmt(M.T2,0)+
+      " min half&#8209;life, in "+fmt(M.dt,0)+" min steps. Visible stair height is the resolution cost of your control interval; halve the interval to halve it.";
+  }
+
+  function niceStep(raw){
+    var mag = Math.pow(10, Math.floor(Math.log(raw)/Math.LN10));
+    var norm = raw/mag;
+    var step = norm<1.5?1:norm<3?2:norm<7?5:10;
+    return step*mag;
+  }
+
+  function run(){
+    var M = model();
+    renderReadout(M);
+    renderVerdicts(M);
+    renderCeilings(M);
+    renderTables(M);
+    renderChart(M);
+    save();
+  }
+
+  ids.forEach(function(k){ el[k].addEventListener("input", run); });
+
+  var bEx = document.getElementById("modeEx"), bDil = document.getElementById("modeDil");
+  function setMode(m){
+    mode = m;
+    bEx.setAttribute("aria-pressed", m==="exchange");
+    bDil.setAttribute("aria-pressed", m!=="exchange");
+    run();
+  }
+  bEx.addEventListener("click", function(){ setMode("exchange"); });
+  bDil.addEventListener("click", function(){ setMode("dilution"); });
+  setMode(mode);
+})();
+</script>
+
+</body>
+</html>
