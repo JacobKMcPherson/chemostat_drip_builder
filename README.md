@@ -103,6 +103,59 @@ so all three curves fit equally well. Separating them is what dose fractionation
 the total daily dose constant and redistribute it across different numbers of doses per day.
 Only the driving index stays predictive. The marked point is a prediction to test, not a result.
 
+## Recording and analysis
+
+The sampling plan doubles as a data-entry sheet. Type observed drug concentrations, treated
+CFU/mL, and untreated control CFU/mL against each timepoint; off-plan timepoints can be added
+for samples taken outside the schedule. Everything is held in `localStorage`, so a run
+survives a reload, and changing a protocol input never discards recorded values.
+
+From those numbers the page fits the PK you actually achieved rather than the one you asked
+for:
+
+- terminal elimination by unweighted least squares on `ln C` against time, over the points
+  after `Cmax`, reported with `R²` and the number of points used
+- `AUC` by linear trapezoid, extrapolated to infinity by `C_last/ke`
+- observed `%T>MIC`, `AUC₂₄/MIC`, and `Cmax/MIC`, computed the same way as the intended ones
+
+and the PD alongside it: dilution-corrected change from baseline, change against the control
+arm, maximum kill and when it occurred, time to 1- and 3-log drops by interpolation, and
+regrowth after the nadir. The observed result is then drawn on all three exposure–response
+plots as a second marker, so prediction and outcome sit on the same axes.
+
+The comparison against intent is the point. A run that reports "intended 90 min, achieved
+91.7 min, R² 0.997" is defensible; one that reports only the intended figure is not.
+
+## FAIR data package
+
+The export is a [Frictionless Data Package](https://datapackage.org/standard/data-package/):
+a ZIP of UTF-8 CSVs plus a `datapackage.json` declaring every column's name, type, unit, and
+meaning, alongside `README.md` (methods, column dictionary, assumptions), `CITATION.cff`, and
+`LICENSE.txt`.
+
+| File | Contents |
+|---|---|
+| `datapackage.json` | Schema, units, licence, provenance, full parameter set |
+| `data/protocol_parameters.csv` | Every input, with units |
+| `data/sampling_plan.csv` | Planned timepoints and volume accounting |
+| `data/concentration_time.csv` | Intended vs observed drug over time |
+| `data/time_kill.csv` | Raw, corrected, and control-referenced counts |
+| `data/pk_summary.csv` | Intended vs observed PK parameters |
+| `data/pkpd_indices.csv` | Indices with predicted and observed effect |
+
+Data are CC BY 4.0, the software is MIT, and both carry machine-readable SPDX identifiers.
+The ZIP is written by a small store-only writer built into the page, so the export adds no
+dependencies and no build step.
+
+Two deliberate choices. Raw *and* corrected counts are both exported, so the dilution
+correction can be audited or undone rather than taken on trust. And the demo filler sets a
+`contains_simulated_values` flag that propagates into `datapackage.json` and the top of the
+package README — simulated data can be used to trial the pipeline, but it cannot quietly
+escape as real.
+
+The one thing the page cannot do is mint a persistent identifier. Deposit the ZIP in Zenodo,
+Dryad, or an institutional repository to get a DOI, then add it to `CITATION.cff`.
+
 ## Feasibility limits
 
 The page flags any interval where the clamp would need to be open more than 100% of the

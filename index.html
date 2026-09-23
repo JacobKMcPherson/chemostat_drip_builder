@@ -230,6 +230,40 @@
   tbody td.tag-cfu{color:var(--good);font-weight:600;}
   tbody td.tag-drug{color:var(--accent);font-weight:600;}
 
+  /* ---- data entry ---- */
+  #entryTable input{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+    background:var(--surface-2);color:var(--ink);
+    border:1px solid var(--line);border-radius:5px;
+    padding:4px 6px;width:100px;text-align:right;
+  }
+  #entryTable input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  #entryTable input.filled{border-color:var(--accent);}
+  #entryTable td{padding:5px 9px;}
+  .rowdrop{
+    background:transparent;border:none;color:var(--ink-3);cursor:pointer;
+    font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1;padding:2px 5px;
+  }
+  .rowdrop:hover{color:var(--bad);}
+  .offplan td:first-child::after{content:" +";color:var(--accent);font-weight:600;}
+
+  .figtab{margin-bottom:22px;}
+  .figtab:last-child{margin-bottom:0;}
+  .figtab .caption{display:flex;flex-wrap:wrap;align-items:baseline;gap:9px;margin-bottom:9px;}
+  .figtab .caption h3{font-size:13.5px;font-weight:600;}
+  .figtab .caption p{margin:0;font-size:12px;color:var(--ink-3);flex:1 1 200px;}
+  .copybtn{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;
+    background:transparent;color:var(--ink-2);
+    border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap;
+  }
+  .copybtn:hover{border-color:var(--accent);color:var(--accent);}
+  .statusmsg{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;margin-top:10px;
+    color:var(--good);
+  }
+  .statusmsg.err{color:var(--bad);}
+
   footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3);}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 </style>
@@ -413,38 +447,8 @@
   </section>
 
   <section>
-    <div class="sechead"><h2>7 · Bench procedure</h2></div>
-    <div class="panel">
-      <ol class="steps">
-        <li><strong>Calibrate the drop factor once per tubing lot.</strong> Count 100 drops of your actual diluent into a tared tube and weigh it. Viscous or surfactant-containing media give drops well off the nominal 60 gtt/mL; using the number on the box is the largest avoidable error in this whole protocol.</li>
-        <li><strong>Set the clamp, then count.</strong> Count drops for a full 60&nbsp;s twice and average. Type that number into the rate field &mdash; do not type the rate you were aiming for.</li>
-        <li><strong>Re-count at every interval.</strong> Gravity head falls as the reservoir empties, so the rate drifts down over a long run. If the count has moved more than ~10%, retype it and the remaining schedule recomputes.</li>
-        <li><strong>Run Phase A by drop count.</strong> Open the clamp, count the listed drops, close it. Mix between steps &mdash; the model assumes the vessel is well mixed within each interval.</li>
-        <li><strong>At peak, switch reservoirs</strong> from drug stock to plain diluent. Note the time; that is <kbd>t = 0</kbd> for Phase B.</li>
-        <li><strong>Run Phase B.</strong> In exchange mode, withdraw the listed volume <em>first</em>, then replace it by counting drops. Withdrawing first keeps the volume from transiently rising and is the natural place to take your timed sample.</li>
-        <li><strong>Verify with assay, not arithmetic.</strong> Pull a sample at peak and at 1&ndash;2 half&#8209;lives, assay drug concentration, and fit the actual k. Report the measured k, not the intended one.</li>
-      </ol>
-    </div>
-  </section>
-
-  <section>
-    <div class="sechead"><h2>8 · The math being used</h2></div>
-    <div class="panel">
-      <p class="note">With nothing leaving the vessel, concentration is mass over a moving volume, so both phases are volume bookkeeping.</p>
-      <div class="eq">q = n / D          mL/min from n drops/min at D gtt/mL</div>
-      <p class="note"><strong>Phase A.</strong> All added drug stays, so cumulative added volume Q and concentration are locked together. With f = 1/R the target-to-stock ratio and u = 1 &minus; e<sup>&minus;k<sub>a</sub>t</sup>:</p>
-      <div class="eq">C(t) = C_stock &middot; Q / (V&#8320; + Q)        &rarr;        Q(t) = V&#8320; &middot; f &middot; u / (1 &minus; f &middot; u)</div>
-      <p class="note">Each interval delivers the difference in Q. Because f is small, the required flow is very nearly V&#8320;&middot;f&middot;k<sub>a</sub>&middot;e<sup>&minus;k<sub>a</sub>t</sup> &mdash; it <strong>halves every absorption half&#8209;time</strong>, which is the shape of the Phase A table.</p>
-      <p class="note"><strong>Phase B, exchange.</strong> Remove and replace a fixed fraction each interval; volume is constant and concentration falls geometrically:</p>
-      <div class="eq">&Delta;V / V = 1 &minus; e<sup>&minus;k&#8337;&middot;&Delta;t</sup></div>
-      <p class="note"><strong>Phase B, dilution only.</strong> Mass is fixed, so C = M/V and exponential decay demands exponential volume growth &mdash; the vessel doubles every half&#8209;life, and cells dilute at exactly k&#8337;, confounding your CFU counts with the clearance you are trying to impose:</p>
-      <div class="eq">V(t) = V_peak &middot; e<sup>+k&#8337;&middot;t</sup>        q(t) = k&#8337; &middot; V(t)</div>
-    </div>
-  </section>
-
-  <section>
     <div class="sechead">
-      <h2>9 &middot; Pharmacodynamic response</h2>
+      <h2>7 &middot; Pharmacodynamic response</h2>
       <p>Where this exposure lands on the three PK/PD indices.</p>
     </div>
     <div class="panel">
@@ -503,6 +507,187 @@
 
       <p class="note">Indices are computed from the <em>delivered</em> staircase, not the ideal curve, by trapezoid over the interval endpoints &mdash; the same arithmetic you would apply to assayed samples. AUC is integrated over one full cycle (Phase A + Phase B) and scaled to 24 h on the assumption that the regimen repeats. Because the schedule ends mid-decay, that scaling is an extrapolation; shorten it by running more half&#8209;lives.</p>
       <p class="note">The default Hill parameters are <strong>illustrative class-typical values, not calibrated constants</strong> &mdash; real EI&#8325;&#8320; values shift with organism, strain, inoculum, growth phase, and endpoint window. Fit your own from your kill-curve data and type them in.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>8 &middot; Record your results</h2>
+      <p>Type in what you assayed. Everything below recomputes from your numbers.</p>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:11px;">Study metadata</h3>
+      <p class="note" style="margin-bottom:13px;">These fields travel with the data in the export. They are what makes the package <em>findable</em> and <em>reusable</em> by someone who is not you &mdash; including you, in two years.</p>
+      <div class="grid">
+        <div class="field">
+          <label for="mTitle">Dataset title</label>
+          <input id="mTitle" type="text" placeholder="e.g. Meropenem fed-batch PK/PD vs K. pneumoniae ST258">
+        </div>
+        <div class="field">
+          <label for="mAuthor">Investigator</label>
+          <input id="mAuthor" type="text" placeholder="Given Family">
+        </div>
+        <div class="field">
+          <label for="mOrcid">ORCID iD</label>
+          <input id="mOrcid" type="text" placeholder="0000-0002-1825-0097">
+          <div class="hint">A persistent identifier for the creator &mdash; the F in FAIR.</div>
+        </div>
+        <div class="field">
+          <label for="mOrg">Institution</label>
+          <input id="mOrg" type="text" placeholder="Department, University">
+        </div>
+        <div class="field">
+          <label for="mDrug">Drug</label>
+          <input id="mDrug" type="text" placeholder="e.g. meropenem">
+        </div>
+        <div class="field">
+          <label for="mOrganism">Organism / strain</label>
+          <input id="mOrganism" type="text" placeholder="e.g. Klebsiella pneumoniae ATCC BAA-1705">
+        </div>
+        <div class="field">
+          <label for="mMedium">Medium</label>
+          <input id="mMedium" type="text" placeholder="e.g. cation-adjusted MHB">
+        </div>
+        <div class="field">
+          <label for="mRun">Run / replicate ID</label>
+          <input id="mRun" type="text" placeholder="e.g. run-03-repA">
+        </div>
+      </div>
+      <div class="field" style="margin-top:13px;">
+        <label for="mDesc">Description</label>
+        <input id="mDesc" type="text" placeholder="One or two sentences on what this run was testing.">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <div class="sechead" style="margin-bottom:8px;">
+        <h3 style="font-size:14px;font-weight:600;">Assay results</h3>
+      </div>
+      <p class="note" style="margin-bottom:12px;">Rows come from your sampling plan. Leave a cell blank if you did not assay it. Enter CFU/mL as counted &mdash; scientific notation like <kbd>4.2e6</kbd> works &mdash; and the dilution correction is applied for you.</p>
+
+      <div class="tablewrap" id="entryWrap" style="max-height:460px;">
+        <table id="entryTable">
+          <thead><tr>
+            <th>Clock</th><th>Phase</th>
+            <th>Drug obs. (mg/L)</th>
+            <th>Treated (CFU/mL)</th>
+            <th>Control (CFU/mL)</th>
+            <th>Corr. log&#8321;&#8320;</th>
+            <th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="presets" style="margin-top:12px;gap:8px;">
+        <input id="addT" type="number" placeholder="min" step="1" min="0"
+               style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:3px 10px;width:80px;">
+        <button type="button" id="addTime">Add off-plan timepoint</button>
+        <button type="button" id="demoFill">Fill with simulated values</button>
+        <button type="button" id="clearObs">Clear all recorded data</button>
+      </div>
+      <div id="obsStatus"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>9 &middot; Observed analysis</h2>
+      <p>What you actually achieved, against what you intended.</p>
+    </div>
+    <div class="panel">
+      <div id="obsEmpty"></div>
+      <dl class="readout" id="obsReadout"></dl>
+      <div id="obsVerdicts"></div>
+      <figure style="margin-top:16px;">
+        <div class="keyrow">
+          <span><i class="swatch" style="background:var(--ink-3)"></i> Intended concentration</span>
+          <span><i class="swatch" style="background:var(--accent)"></i> Observed drug</span>
+          <span><i class="swatch" style="background:var(--bad)"></i> Treated log&#8321;&#8320; CFU</span>
+          <span><i class="swatch" style="background:var(--good)"></i> Control log&#8321;&#8320; CFU</span>
+        </div>
+        <div class="chartbox" id="obsChart"></div>
+        <figcaption id="obsChartCap"></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>10 &middot; Figure-ready tables</h2>
+      <p>Copy straight into a plotting package, or take them from the export.</p>
+    </div>
+    <div class="panel" id="figTables"></div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>11 &middot; Export FAIR data package</h2>
+      <p>One ZIP, self-describing, no proprietary formats.</p>
+    </div>
+    <div class="panel">
+      <p class="note">The download is a <a href="https://datapackage.org/standard/data-package/" target="_blank" rel="noopener">Frictionless Data Package</a>: UTF-8 CSVs plus a <code>datapackage.json</code> that declares every column's type, unit, and meaning. That descriptor is what makes the files machine-readable without a human explaining them, which is the whole point of <em>interoperable</em> and <em>reusable</em>.</p>
+
+      <div class="tablewrap" style="margin-top:14px;max-height:none;">
+        <table>
+          <thead><tr><th>File</th><th>Contents</th></tr></thead>
+          <tbody>
+            <tr><td>datapackage.json</td><td>Schema, units, licence, provenance, full parameter set</td></tr>
+            <tr><td>README.md</td><td>Methods, column dictionary, assumptions, reuse notes</td></tr>
+            <tr><td>CITATION.cff</td><td>Machine-readable citation metadata</td></tr>
+            <tr><td>LICENSE.txt</td><td>CC BY 4.0 for the data</td></tr>
+            <tr><td>data/protocol_parameters.csv</td><td>Every input, with units</td></tr>
+            <tr><td>data/sampling_plan.csv</td><td>Planned timepoints and volume accounting</td></tr>
+            <tr><td>data/concentration_time.csv</td><td>Intended vs observed drug over time</td></tr>
+            <tr><td>data/time_kill.csv</td><td>Raw, corrected, and control-referenced counts</td></tr>
+            <tr><td>data/pk_summary.csv</td><td>Intended vs observed PK parameters</td></tr>
+            <tr><td>data/pkpd_indices.csv</td><td>Indices with predicted and observed effect</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="presets" style="margin-top:14px;gap:8px;">
+        <button type="button" id="dlZip" style="font-size:13px;padding:7px 14px;border-color:var(--accent);color:var(--accent);font-weight:600;">Download data package (.zip)</button>
+        <button type="button" id="dlJson">Preview datapackage.json</button>
+      </div>
+      <div id="exportStatus"></div>
+      <pre id="jsonPreview" hidden style="margin-top:12px;max-height:340px;overflow:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.45;color:var(--ink);"></pre>
+
+      <p class="note" style="margin-top:14px;">Data is licensed <strong>CC BY 4.0</strong> and the calculator itself is MIT &mdash; both are open licences with machine-readable SPDX identifiers, so the package satisfies <em>accessible</em> and <em>reusable</em> without anyone having to email you for permission. The one thing this cannot do for you is mint a persistent identifier: deposit the ZIP in Zenodo, Dryad, or your institutional repository to get a DOI, then add it to <code>CITATION.cff</code>.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>12 &middot; Bench procedure</h2></div>
+    <div class="panel">
+      <ol class="steps">
+        <li><strong>Calibrate the drop factor once per tubing lot.</strong> Count 100 drops of your actual diluent into a tared tube and weigh it. Viscous or surfactant-containing media give drops well off the nominal 60 gtt/mL; using the number on the box is the largest avoidable error in this whole protocol.</li>
+        <li><strong>Set the clamp, then count.</strong> Count drops for a full 60&nbsp;s twice and average. Type that number into the rate field &mdash; do not type the rate you were aiming for.</li>
+        <li><strong>Re-count at every interval.</strong> Gravity head falls as the reservoir empties, so the rate drifts down over a long run. If the count has moved more than ~10%, retype it and the remaining schedule recomputes.</li>
+        <li><strong>Run Phase A by drop count.</strong> Open the clamp, count the listed drops, close it. Mix between steps &mdash; the model assumes the vessel is well mixed within each interval.</li>
+        <li><strong>At peak, switch reservoirs</strong> from drug stock to plain diluent. Note the time; that is <kbd>t = 0</kbd> for Phase B.</li>
+        <li><strong>Run Phase B.</strong> In exchange mode, withdraw the listed volume <em>first</em>, then replace it by counting drops. Withdrawing first keeps the volume from transiently rising and is the natural place to take your timed sample.</li>
+        <li><strong>Sample on the plan, record as you go.</strong> Enter each assay result in section 8 while the run is live &mdash; the correction column tells you immediately whether an apparent drop is drug or dilution.</li>
+        <li><strong>Verify with assay, not arithmetic.</strong> Fit the observed k from your own concentrations and report that, not the intended one. Section 9 does the fit and shows you the gap.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>13 &middot; The math being used</h2></div>
+    <div class="panel">
+      <p class="note">With nothing leaving the vessel, concentration is mass over a moving volume, so both phases are volume bookkeeping.</p>
+      <div class="eq">q = n / D          mL/min from n drops/min at D gtt/mL</div>
+      <p class="note"><strong>Phase A.</strong> All added drug stays, so cumulative added volume Q and concentration are locked together. With f = 1/R the target-to-stock ratio and u = 1 &minus; e<sup>&minus;k<sub>a</sub>t</sup>:</p>
+      <div class="eq">C(t) = C_stock &middot; Q / (V&#8320; + Q)        &rarr;        Q(t) = V&#8320; &middot; f &middot; u / (1 &minus; f &middot; u)</div>
+      <p class="note">Each interval delivers the difference in Q. Because f is small, the required flow is very nearly V&#8320;&middot;f&middot;k<sub>a</sub>&middot;e<sup>&minus;k<sub>a</sub>t</sup> &mdash; it <strong>halves every absorption half&#8209;time</strong>, which is the shape of the Phase A table.</p>
+      <p class="note"><strong>Phase B, exchange.</strong> Remove and replace a fixed fraction each interval; volume is constant and concentration falls geometrically:</p>
+      <div class="eq">&Delta;V / V = 1 &minus; e<sup>&minus;k&#8337;&middot;&Delta;t</sup></div>
+      <p class="note"><strong>Phase B, dilution only.</strong> Mass is fixed, so C = M/V and exponential decay demands exponential volume growth &mdash; the vessel doubles every half&#8209;life, and cells dilute at exactly k&#8337;, confounding your CFU counts with the clearance you are trying to impose:</p>
+      <div class="eq">V(t) = V_peak &middot; e<sup>+k&#8337;&middot;t</sup>        q(t) = k&#8337; &middot; V(t)</div>
+      <p class="note"><strong>Observed elimination</strong> is fitted by unweighted least squares on ln C against time, over the points after C<sub>max</sub>. AUC is linear trapezoid over the observed points, extrapolated to infinity by C_last/k&#8337;:</p>
+      <div class="eq">ln C = ln C&#8320; &minus; k&#8337;&middot;t        AUC&#8734; = AUC&#8320;&#8331;&#8348; + C_last / k&#8337;</div>
     </div>
   </section>
 
@@ -1025,7 +1210,9 @@
     });
 
     return {list:list, totalDrawn:list.length*M.svol, netLost:cum,
-            pctLost:100*cum/M.Vpeak, worstCorr:worst, dVex:dVex, tau:tau};
+            pctLost:100*cum/M.Vpeak, worstCorr:worst, dVex:dVex, tau:tau,
+            volAt:volAt,
+            corrAt:function(tt){ return -Math.log(cfuFactor(Math.max(0,tt)))/Math.LN10; }};
   }
 
   function renderSampling(M){
@@ -1142,6 +1329,18 @@
        '" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600">'+
        (o.eff>0?'+':'')+fmt(o.eff,2)+(off?' ▸':'')+'</text>';
 
+    // measured result: index from assays, effect from dilution-corrected counts
+    if(o.obs){
+      var ox = x(Math.min(o.obs.x, o.xmax)), oy = y(o.obs.y);
+      s+='<path d="M'+ox.toFixed(1)+' '+(oy-6).toFixed(1)+'L'+(ox+6).toFixed(1)+' '+oy.toFixed(1)+
+         'L'+ox.toFixed(1)+' '+(oy+6).toFixed(1)+'L'+(ox-6).toFixed(1)+' '+oy.toFixed(1)+
+         'Z" fill="var(--bad)" stroke="var(--surface)" stroke-width="1.6"/>';
+      s+='<text x="'+(ox > padL+iw*0.62 ? ox-10 : ox+10).toFixed(1)+'" y="'+(oy+15).toFixed(1)+
+         '" text-anchor="'+(ox > padL+iw*0.62 ? "end" : "start")+'" fill="var(--bad)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="10.5" font-weight="600">obs '+
+         (o.obs.y>0?'+':'')+fmt(o.obs.y,2)+'</text>';
+    }
+
     s+='<text x="'+(padL+iw/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" fill="var(--ink-3)" '+
        'font-family="IBM Plex Mono, monospace" font-size="10.5">'+o.xlab+'</text>';
     s+='</svg>';
@@ -1155,6 +1354,9 @@
     var eC = hill(I.C, M.E0, M.Emax, M.EI50C, M.H);
     var drive = M.drive;
     var driven = drive === "T" ? eT : drive === "A" ? eA : drive === "C" ? eC : null;
+    var OA = M.analysis || {};
+    var obsY = (OA.dEnd != null) ? OA.dEnd : null;
+    function obsPt(v){ return (obsY!=null && v!=null && isFinite(v)) ? {x:v, y:obsY} : null; }
 
     document.getElementById("pdreadout").innerHTML = [
       ["%T > MIC", fmt(I.T,0)+"%", ""],
@@ -1195,15 +1397,17 @@
 
     var specs = [
       {key:"T", title:"Time above MIC", xlab:"%T > MIC", EI50:M.EI50T, cur:I.T, eff:eT,
-       xmax:100, fmtx:function(v){return Math.round(v)+"%";},
+       xmax:100, fmtx:function(v){return Math.round(v)+"%";}, obs:obsPt(OA.TObs),
        sub:"%T>MIC = "+fmt(I.T,0)+"%  ·  EI50 "+fmt(M.EI50T,0)+"%"},
       {key:"A", title:"Total exposure", xlab:"AUC24 / MIC  (h)", EI50:M.EI50A, cur:I.A, eff:eA,
-       xmax:Math.max(4*M.EI50A, 1.25*I.A, 1),
+       xmax:Math.max(4*M.EI50A, 1.25*I.A, 1.25*(OA.AObs||0), 1),
        fmtx:function(v){ return v<=0?"0":(v>=100?String(Math.round(v)):fmt(v,v<10?1:0)); },
+       obs:obsPt(OA.AObs),
        sub:"AUC24/MIC = "+fmt(I.A,0)+"  ·  EI50 "+fmt(M.EI50A,0)},
       {key:"C", title:"Peak exposure", xlab:"Cmax / MIC", EI50:M.EI50C, cur:I.C, eff:eC,
-       xmax:Math.max(4*M.EI50C, 1.25*I.C, 1),
+       xmax:Math.max(4*M.EI50C, 1.25*I.C, 1.25*(OA.CObs||0), 1),
        fmtx:function(v){ return v<=0?"0":fmt(v,v<10?1:0); },
+       obs:obsPt(OA.CObs),
        sub:"Cmax/MIC = "+fmt(I.C,1)+"  ·  EI50 "+fmt(M.EI50C,1)}
     ];
 
@@ -1217,9 +1421,910 @@
              '<div class="sub">'+sp.sub+'</div>'+
              pdPlot({E0:M.E0, Emax:M.Emax, H:M.H, EI50:sp.EI50, cur:sp.cur, eff:sp.eff,
                      xmax:sp.xmax, xlab:sp.xlab, fmtx:sp.fmtx, driver:isDrv || drive===null,
+                     obs:sp.obs,
                      aria:"Change in log10 CFU versus "+sp.xlab})+
              '</div>';
     }).join("");
+  }
+
+  // ---------- recorded observations ----------
+  var METAIDS = ["mTitle","mAuthor","mOrcid","mOrg","mDrug","mOrganism","mMedium","mRun","mDesc"];
+  METAIDS.forEach(function(k){ el[k] = document.getElementById(k); });
+
+  var obs = {};          // "120.0" -> {c:mg/L, cfu:CFU/mL, ctrl:CFU/mL}
+  var extraTimes = [];   // off-plan timepoints
+  var synthetic = false; // set by the demo filler, travels into the export
+  var CUR = null;
+
+  try{
+    var so = JSON.parse(localStorage.getItem("dripobs")||"null");
+    if(so){ obs = so.obs||{}; extraTimes = so.extra||[]; synthetic = !!so.synthetic; }
+  }catch(e){}
+  try{
+    var sm = JSON.parse(localStorage.getItem("dripmeta")||"null");
+    if(sm){ METAIDS.forEach(function(k){ if(sm[k]!=null) el[k].value = sm[k]; }); }
+  }catch(e){}
+
+  function saveObs(){
+    try{ localStorage.setItem("dripobs",
+      JSON.stringify({obs:obs, extra:extraTimes, synthetic:synthetic})); }catch(e){}
+  }
+  function saveMeta(){
+    try{
+      var m={}; METAIDS.forEach(function(k){ m[k]=el[k].value; });
+      localStorage.setItem("dripmeta", JSON.stringify(m));
+    }catch(e){}
+  }
+  function meta(){
+    var m={}; METAIDS.forEach(function(k){ m[k]=(el[k].value||"").trim(); });
+    return m;
+  }
+
+  function buildRows(M){
+    var S = M.samples, keys = {};
+    S.list.forEach(function(s){ keys[s.t.toFixed(1)] = {t:s.t, planned:true}; });
+    extraTimes.forEach(function(t){
+      var k=(+t).toFixed(1); if(!keys[k]) keys[k]={t:+t, planned:false};
+    });
+    Object.keys(obs).forEach(function(k){
+      if(!keys[k]) keys[k]={t:parseFloat(k), planned:false};
+    });
+    return Object.keys(keys).map(function(k){
+      var r = keys[k], d = obs[k] || {};
+      r.key = k;
+      r.c    = isFinite(d.c)    ? d.c    : null;
+      r.cfu  = isFinite(d.cfu)  ? d.cfu  : null;
+      r.ctrl = isFinite(d.ctrl) ? d.ctrl : null;
+      r.corr = S.corrAt(r.t);
+      r.phase = r.t<=1e-9 ? "baseline" : (r.t<=M.tEndA ? "A · rise" : "B · decay");
+      r.intended = interpC(M.profile, r.t);
+      return r;
+    }).sort(function(a,b){ return a.t-b.t; });
+  }
+
+  function linreg(xs, ys){
+    var n=xs.length, sx=0,sy=0,sxx=0,sxy=0,syy=0;
+    for(var i=0;i<n;i++){ sx+=xs[i]; sy+=ys[i]; sxx+=xs[i]*xs[i]; sxy+=xs[i]*ys[i]; syy+=ys[i]*ys[i]; }
+    var den = n*sxx-sx*sx;
+    if(den === 0) return {slope:0, intercept:0, r2:0};
+    var slope=(n*sxy-sx*sy)/den;
+    var num=(n*sxy-sx*sy), dd=Math.sqrt(den*(n*syy-sy*sy));
+    var r = dd===0 ? 0 : num/dd;
+    return {slope:slope, intercept:(sy-slope*sx)/n, r2:r*r};
+  }
+
+  function crossTime(pts, target){
+    for(var i=1;i<pts.length;i++){
+      if(pts[i-1].dBase > target && pts[i].dBase <= target){
+        var f=(pts[i-1].dBase-target)/(pts[i-1].dBase-pts[i].dBase);
+        return pts[i-1].t + f*(pts[i].t-pts[i-1].t);
+      }
+    }
+    return null;
+  }
+
+  function analyse(M, rows){
+    var cpts = rows.filter(function(r){ return r.c !== null; });
+    var kpts = rows.filter(function(r){ return r.cfu !== null && r.cfu > 0; });
+    var A = {nC:cpts.length, nK:kpts.length, kpts:kpts, cpts:cpts,
+             any:(cpts.length+kpts.length)>0};
+    var i;
+
+    if(cpts.length){
+      var cmax=-Infinity, tmax=0;
+      cpts.forEach(function(r){ if(r.c>cmax){ cmax=r.c; tmax=r.t; } });
+      A.cmax=cmax; A.tmax=tmax;
+
+      var auc=0;
+      for(i=1;i<cpts.length;i++) auc += (cpts[i].t-cpts[i-1].t)*(cpts[i].c+cpts[i-1].c)/2;
+      A.aucObs = auc/60;
+      A.span = cpts[cpts.length-1].t - cpts[0].t;
+      A.cLast = cpts[cpts.length-1].c;
+      A.tLast = cpts[cpts.length-1].t;
+
+      // terminal phase: log-linear least squares on points after Cmax
+      var term = cpts.filter(function(r){ return r.t > tmax && r.c > 0; });
+      if(term.length >= 3){
+        var fit = linreg(term.map(function(r){return r.t;}),
+                         term.map(function(r){return Math.log(r.c);}));
+        if(fit.slope < 0){
+          A.keObs = -fit.slope;
+          A.t2Obs = LN2/A.keObs;
+          A.r2 = fit.r2;
+          A.nTerm = term.length;
+          A.aucInf = A.aucObs + (A.cLast/A.keObs)/60;
+        }
+      }
+
+      var above=0;
+      for(i=1;i<cpts.length;i++){
+        var t0=cpts[i-1].t,c0=cpts[i-1].c,t1=cpts[i].t,c1=cpts[i].c,sp=t1-t0;
+        if(sp<=0) continue;
+        if(c0>=M.MIC && c1>=M.MIC) above+=sp;
+        else if(c0<M.MIC && c1<M.MIC){ /* below throughout */ }
+        else { var fr=(M.MIC-c0)/(c1-c0); above += (c1>c0)? sp*(1-fr) : sp*fr; }
+      }
+      A.tAbove = above;
+      A.TObs = A.span>0 ? 100*above/A.span : 0;
+      A.CObs = cmax/M.MIC;
+      var aucUse = isFinite(A.aucInf) ? A.aucInf : A.aucObs;
+      A.AObs = A.span>0 ? (aucUse*(1440/A.span))/M.MIC : 0;
+    }
+
+    if(kpts.length){
+      var base = kpts[0];
+      A.baseLog = Math.log(base.cfu)/Math.LN10;
+      A.baseT = base.t;
+      kpts.forEach(function(r){
+        r.log = Math.log(r.cfu)/Math.LN10;
+        r.logCorr = r.log + r.corr;
+        r.dBase = r.logCorr - (A.baseLog + base.corr);
+        r.dRaw  = r.log - A.baseLog;
+        r.ctrlLog = (r.ctrl!==null && r.ctrl>0) ? Math.log(r.ctrl)/Math.LN10 : null;
+        r.dCtrl = r.ctrlLog!==null ? r.log - r.ctrlLog : null;
+      });
+      var last = kpts[kpts.length-1];
+      A.dEnd = last.dBase;
+      A.dEndRaw = last.dRaw;
+      A.dEndCtrl = last.dCtrl;
+      A.tEndK = last.t;
+      var nv = kpts[0].dBase, nt = kpts[0].t;
+      kpts.forEach(function(r){ if(r.dBase < nv){ nv=r.dBase; nt=r.t; } });
+      A.maxKill = nv; A.tNadir = nt;
+      A.regrowth = last.dBase - nv;
+      A.tTo1 = crossTime(kpts,-1);
+      A.tTo3 = crossTime(kpts,-3);
+      var ctrlPts = kpts.filter(function(r){ return r.ctrlLog!==null; });
+      if(ctrlPts.length>=2){
+        A.ctrlGrowth = ctrlPts[ctrlPts.length-1].ctrlLog - ctrlPts[0].ctrlLog;
+      }
+    }
+    return A;
+  }
+
+  // ---------- entry table ----------
+  function renderEntry(M){
+    document.querySelector("#entryTable tbody").innerHTML = M.rows.map(function(r){
+      function inp(f){
+        var v = r[f]===null ? "" : r[f];
+        return '<input type="number" step="any" min="0" data-time="'+r.key+'" data-field="'+f+
+               '" value="'+v+'"'+(r[f]!==null?' class="filled"':'')+'>';
+      }
+      return '<tr'+(r.planned?'':' class="offplan"')+'>'+
+        '<td>'+fmt(r.t,0)+' min</td><td>'+r.phase+'</td>'+
+        '<td>'+inp("c")+'</td><td>'+inp("cfu")+'</td><td>'+inp("ctrl")+'</td>'+
+        '<td>'+fmt(r.corr,3)+'</td><td>'+
+        (r.planned?'':'<button type="button" class="rowdrop" data-drop="'+r.key+
+         '" title="Remove this off-plan timepoint" aria-label="Remove timepoint">&times;</button>')+
+        '</td></tr>';
+    }).join("");
+    renderEntryStatus(M);
+  }
+
+  function renderEntryStatus(M){
+    var A = M.analysis, bits = [];
+    bits.push(A.nC+" drug value"+(A.nC===1?"":"s"));
+    bits.push(A.nK+" treated count"+(A.nK===1?"":"s"));
+    var nCtrl = M.rows.filter(function(r){ return r.ctrl!==null; }).length;
+    bits.push(nCtrl+" control count"+(nCtrl===1?"":"s"));
+    var html = '<div class="statusmsg">Recorded: '+bits.join(" · ")+'</div>';
+    if(synthetic){
+      html += '<div class="statusmsg err">Contains simulated values — this flag is written into the export so the package cannot be mistaken for real measurements.</div>';
+    }
+    document.getElementById("obsStatus").innerHTML = html;
+  }
+
+  // ---------- observed analysis ----------
+  function renderObs(M){
+    var A = M.analysis;
+    var empty = document.getElementById("obsEmpty");
+    if(!A.any){
+      empty.innerHTML = verdict("ok","Nothing recorded yet",
+        "Enter assay results in section 8 and this fills in: an observed elimination half&#8209;life fitted from your own concentrations, dilution-corrected killing, and the gap between what you intended and what you achieved.");
+      document.getElementById("obsReadout").innerHTML = "";
+      document.getElementById("obsVerdicts").innerHTML = "";
+      document.getElementById("obsChart").innerHTML = "";
+      document.getElementById("obsChartCap").textContent = "";
+      return;
+    }
+    empty.innerHTML = "";
+
+    document.getElementById("obsReadout").innerHTML = [
+      ["Observed Cmax", A.cmax!=null?fmt(A.cmax,2):"—", "mg/L"],
+      ["Observed t½", A.t2Obs!=null?fmt(A.t2Obs,1):"—", "min"],
+      ["Terminal R²", A.r2!=null?fmt(A.r2,3):"—", ""],
+      ["Observed AUC", A.aucObs!=null?fmt(A.aucObs,1):"—", "mg·h/L"],
+      ["Δlog10 at end", A.dEnd!=null?(A.dEnd>0?"+":"")+fmt(A.dEnd,2):"—", ""],
+      ["Max kill", A.maxKill!=null?fmt(A.maxKill,2):"—", "log10"]
+    ].map(function(it){
+      return '<div class="stat"><dt>'+it[0]+'</dt><dd>'+it[1]+
+             (it[2]?'<small>'+it[2]+'</small>':'')+'</dd></div>';
+    }).join("");
+
+    var out = [];
+    if(A.t2Obs != null){
+      var ratio = A.t2Obs/M.T2, off = Math.abs(ratio-1)*100;
+      var cls = off>25 ? "bad" : off>10 ? "warn" : "ok";
+      out.push(verdict(cls, "PK achieved",
+        "You intended a "+fmt(M.T2,0)+" min elimination half&#8209;life and achieved <strong>"+
+        fmt(A.t2Obs,1)+" min</strong> ("+fmt(off,0)+"% "+(ratio>1?"slower":"faster")+
+        "), fitted on "+A.nTerm+" post-peak points with R² = "+fmt(A.r2,3)+
+        ". <strong>Report this number, not the intended one.</strong>"+
+        (A.r2<0.9 ? " The fit is loose — check for a missed sample, an assay outlier, or genuine two-compartment behaviour." : "")));
+    } else if(A.nC > 0){
+      out.push(verdict("warn","Not enough points to fit",
+        "A terminal half&#8209;life needs at least three concentrations after C<sub>max</sub>. You have "+
+        A.nC+" concentration"+(A.nC===1?"":"s")+" recorded. Without the fit, AUC cannot be extrapolated to infinity and the observed PK column stays thin."));
+    }
+
+    if(A.cmax != null && M.pd.cmax > 0){
+      var dev = 100*(A.cmax-M.pd.cmax)/M.pd.cmax;
+      if(Math.abs(dev) > 20){
+        out.push(verdict("warn","Peak missed target",
+          "Observed C<sub>max</sub> of <strong>"+fmt(A.cmax,2)+" mg/L</strong> is "+fmt(Math.abs(dev),0)+
+          "% "+(dev>0?"above":"below")+" the intended "+fmt(M.pd.cmax,2)+
+          " mg/L. Usual suspects: drop factor not calibrated for this medium, stock strength off, or drug binding to the vessel."));
+      }
+    }
+
+    if(A.dEnd != null){
+      var d = A.dEnd;
+      var cls2 = d<=-1 ? "ok" : d<=0 ? "warn" : "bad";
+      var lbl = d<=-3 ? "3-log kill" : d<=-1 ? "1-log kill" : d<=0 ? "Stasis" : "Net growth";
+      out.push(verdict(cls2, lbl,
+        "Dilution-corrected change from baseline at "+mins(A.tEndK)+" is <strong>"+
+        (d>0?"+":"")+fmt(d,2)+" log&#8321;&#8320;</strong>"+
+        (A.dEndRaw!=null ? " (raw, uncorrected: "+(A.dEndRaw>0?"+":"")+fmt(A.dEndRaw,2)+")" : "")+
+        (A.tTo1!=null ? ". Crossed &minus;1 log at "+mins(A.tTo1) : "")+
+        (A.tTo3!=null ? ", &minus;3 log at "+mins(A.tTo3) : "")+"."));
+      if(A.regrowth > 0.5){
+        out.push(verdict("warn","Regrowth after nadir",
+          "Counts bottomed at "+fmt(A.maxKill,2)+" log&#8321;&#8320; around "+mins(A.tNadir)+
+          " then rose <strong>"+fmt(A.regrowth,2)+" log&#8321;&#8320;</strong>. Either concentration fell below the MIC while viable organisms remained, or a resistant subpopulation is being selected. Both are real results &mdash; keep the late samples."));
+      }
+    }
+
+    if(A.dEndRaw != null && Math.abs(A.dEnd - A.dEndRaw) > 0.3){
+      out.push(verdict("warn","The correction matters here",
+        "Raw counts moved "+(A.dEndRaw>0?"+":"")+fmt(A.dEndRaw,2)+" log&#8321;&#8320;, but <strong>"+
+        fmt(A.dEnd-A.dEndRaw,2)+" log&#8321;&#8320; of that is dilution</strong>, not drug. The corrected figure is "+
+        (A.dEnd>0?"+":"")+fmt(A.dEnd,2)+". Reporting the raw number would overstate activity."));
+    }
+    if(A.ctrlGrowth != null){
+      out.push(verdict("ok","Control arm",
+        "The untreated control grew <strong>"+(A.ctrlGrowth>0?"+":"")+fmt(A.ctrlGrowth,2)+
+        " log&#8321;&#8320;</strong> over the run. Your Hill E&#8320; is set to "+fmt(M.E0,2)+
+        "; the measured value is the one to use."+
+        (Math.abs(A.ctrlGrowth-M.E0)>0.5 ? " They disagree by more than half a log &mdash; update E&#8320; in section 7." : "")));
+    }
+    document.getElementById("obsVerdicts").innerHTML = out.join("");
+
+    renderObsChart(M);
+  }
+
+  function renderObsChart(M){
+    var A = M.analysis;
+    var W=760,H=330,padL=52,padR=54,padT=28,padB=42;
+    var iw=W-padL-padR, ih=H-padT-padB;
+    var tMax = Math.max(M.tEndA+M.tEndB, A.tLast||0, A.tEndK||0) || 1;
+    var cMax = Math.max(M.pd.cmax, A.cmax||0)*1.08 || 1;
+    var logs = A.kpts.map(function(r){ return r.log; })
+                .concat(A.kpts.filter(function(r){return r.ctrlLog!==null;})
+                              .map(function(r){ return r.ctrlLog; }));
+    var lo = logs.length ? Math.floor(Math.min.apply(null,logs)) : 0;
+    var hi = logs.length ? Math.ceil(Math.max.apply(null,logs)) : 1;
+    if(hi-lo < 1) hi = lo+1;
+
+    var x=function(t){ return padL+iw*Math.max(0,Math.min(1,t/tMax)); };
+    var yC=function(c){ return padT+ih*(1-Math.max(0,Math.min(1,c/cMax))); };
+    var yL=function(l){ return padT+ih*(1-(l-lo)/(hi-lo)); };
+
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Observed drug concentration and viable counts over time">';
+    for(var g=0;g<=4;g++){
+      var yy=padT+ih*g/4;
+      s+='<line x1="'+padL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+yy.toFixed(1)+
+         '" stroke="var(--line)" stroke-width="1"/>';
+      s+='<text x="'+(padL-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="10">'+fmt(cMax*(1-g/4), cMax<10?1:0)+'</text>';
+      s+='<text x="'+(W-padR+8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="start" fill="var(--ink-3)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="10">'+fmt(hi-(hi-lo)*g/4,1)+'</text>';
+    }
+    var tickStep = niceStep(tMax/6);
+    for(var tv=0; tv<=tMax+1e-6; tv+=tickStep){
+      s+='<text x="'+x(tv).toFixed(1)+'" y="'+(H-padB+19)+'" text-anchor="middle" fill="var(--ink-3)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="10">'+Math.round(tv)+'</text>';
+    }
+    if(M.MIC <= cMax){
+      s+='<line x1="'+padL+'" y1="'+yC(M.MIC).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+yC(M.MIC).toFixed(1)+
+         '" stroke="var(--warn)" stroke-width="1" stroke-dasharray="6 3"/>';
+      s+='<text x="'+(padL+4)+'" y="'+(yC(M.MIC)-4).toFixed(1)+'" fill="var(--warn)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="10">MIC</text>';
+    }
+    s+='<path d="'+M.profile.map(function(p,i){
+      return (i?"L":"M")+x(p[0]).toFixed(1)+" "+yC(p[1]).toFixed(1);
+    }).join(" ")+'" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-dasharray="5 4"/>';
+
+    function series(pts, val, yfn, color, square){
+      if(!pts.length) return "";
+      var out='<path d="'+pts.map(function(p,i){
+        return (i?"L":"M")+x(p.t).toFixed(1)+" "+yfn(val(p)).toFixed(1);
+      }).join(" ")+'" fill="none" stroke="'+color+'" stroke-width="2"/>';
+      pts.forEach(function(p){
+        var cx=x(p.t), cy=yfn(val(p));
+        out += square
+          ? '<rect x="'+(cx-3.4).toFixed(1)+'" y="'+(cy-3.4).toFixed(1)+
+            '" width="6.8" height="6.8" fill="'+color+'" stroke="var(--surface)" stroke-width="1.4"/>'
+          : '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+
+            '" r="3.8" fill="'+color+'" stroke="var(--surface)" stroke-width="1.4"/>';
+      });
+      return out;
+    }
+    s += series(A.cpts, function(p){return p.c;}, yC, "var(--accent)", false);
+    s += series(A.kpts, function(p){return p.log;}, yL, "var(--bad)", true);
+    s += series(A.kpts.filter(function(r){return r.ctrlLog!==null;}),
+                function(p){return p.ctrlLog;}, yL, "var(--good)", true);
+
+    s+='<text x="'+padL+'" y="'+(H-6)+'" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace" font-size="10.5">minutes</text>';
+    s+='<text x="'+(padL-8)+'" y="12" text-anchor="end" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace" font-size="10.5">mg/L</text>';
+    s+='<text x="'+(W-padR+8)+'" y="12" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace" font-size="10.5">log10</text>';
+    s+='</svg>';
+    document.getElementById("obsChart").innerHTML = s;
+    document.getElementById("obsChartCap").innerHTML =
+      "Left axis drug in mg/L, right axis log&#8321;&#8320; CFU/mL <em>as counted</em> &mdash; uncorrected, because this is what you saw on the plates. The dilution correction is applied in the tables, not here. Dashed grey is the intended concentration.";
+  }
+
+  // ---------- figure-ready tables ----------
+  function nz(v, p){ return (v===null||v===undefined||!isFinite(v)) ? "" : fmt(v,p); }
+
+  function tableSpecs(M){
+    var A = M.analysis, I = M.pd, specs = [];
+
+    specs.push({
+      name:"pk_summary",
+      title:"Table 1 · PK parameters, intended vs observed",
+      note:"The methods-table numbers. Observed columns fill in as you record.",
+      fields:[
+        {name:"parameter", label:"Parameter", type:"string", description:"PK parameter name"},
+        {name:"intended", label:"Intended", type:"number", description:"Value targeted by the schedule"},
+        {name:"observed", label:"Observed", type:"number", description:"Value fitted from recorded assay results"},
+        {name:"unit", label:"Unit", type:"string", description:"Unit of measure"}
+      ],
+      rows:[
+        ["Absorption half-time", nz(M.T1,1), "", "min"],
+        ["Time to peak", nz(M.tEndA,1), nz(A.tmax,1), "min"],
+        ["Elimination half-life", nz(M.T2,1), nz(A.t2Obs,1), "min"],
+        ["Elimination rate constant", nz(M.ke,5), nz(A.keObs,5), "1/min"],
+        ["Peak concentration", nz(I.cmax,3), nz(A.cmax,3), "mg/L"],
+        ["AUC over run", nz(I.aucCycle,2), nz(A.aucObs,2), "mg·h/L"],
+        ["AUC extrapolated to infinity", "", nz(A.aucInf,2), "mg·h/L"],
+        ["Terminal fit R squared", "", nz(A.r2,4), ""],
+        ["Points in terminal fit", "", A.nTerm!=null?String(A.nTerm):"", "count"],
+        ["MIC", nz(M.MIC,4), "", "mg/L"],
+        ["Starting volume", nz(M.V0,1), "", "mL"],
+        ["Peak volume", nz(M.Vpeak,1), "", "mL"]
+      ]
+    });
+
+    specs.push({
+      name:"concentration_time",
+      title:"Table 2 · Concentration–time",
+      note:"Intended against observed. Plot both to show how closely the schedule ran.",
+      fields:[
+        {name:"time_min", label:"Time", type:"number", unit:"min", description:"Minutes from start of Phase A"},
+        {name:"phase", label:"Phase", type:"string", description:"Protocol phase at this timepoint"},
+        {name:"intended_mg_L", label:"Intended", type:"number", unit:"mg/L", description:"Concentration predicted by the delivered schedule"},
+        {name:"observed_mg_L", label:"Observed", type:"number", unit:"mg/L", description:"Assayed drug concentration"},
+        {name:"observed_over_mic", label:"Obs/MIC", type:"number", description:"Observed concentration divided by MIC"}
+      ],
+      rows: M.rows.map(function(r){
+        return [fmt(r.t,1), r.phase.replace(" · ","/"), fmt(r.intended,4),
+                r.c!==null?fmt(r.c,4):"", r.c!==null?fmt(r.c/M.MIC,3):""];
+      })
+    });
+
+    specs.push({
+      name:"time_kill",
+      title:"Table 3 · Time–kill, raw and corrected",
+      note:"The dilution correction is the column a reviewer will ask about, so it is explicit.",
+      fields:[
+        {name:"time_min", label:"Time", type:"number", unit:"min", description:"Minutes from start of Phase A"},
+        {name:"treated_cfu_per_ml", label:"Treated", type:"number", unit:"CFU/mL", description:"Viable count in the treated vessel, as plated"},
+        {name:"treated_log10", label:"log₁₀", type:"number", description:"log10 of the treated count, uncorrected"},
+        {name:"dilution_correction_log10", label:"Corr.", type:"number", description:"log10 to add back for protocol dilution"},
+        {name:"corrected_log10", label:"Corrected", type:"number", description:"Dilution-corrected log10 count"},
+        {name:"delta_log10_from_baseline", label:"Δ baseline", type:"number", description:"Corrected change from the first recorded count"},
+        {name:"control_cfu_per_ml", label:"Control", type:"number", unit:"CFU/mL", description:"Viable count in the untreated control"},
+        {name:"control_log10", label:"Ctrl log₁₀", type:"number", description:"log10 of the control count"},
+        {name:"delta_log10_vs_control", label:"Δ control", type:"number", description:"Treated minus control log10 at the same timepoint"}
+      ],
+      rows: M.rows.filter(function(r){ return r.cfu!==null || r.ctrl!==null; }).map(function(r){
+        var lg = (r.cfu!==null && r.cfu>0) ? Math.log(r.cfu)/Math.LN10 : null;
+        var cl = (r.ctrl!==null && r.ctrl>0) ? Math.log(r.ctrl)/Math.LN10 : null;
+        return [fmt(r.t,1),
+                r.cfu!==null?String(r.cfu):"",
+                nz(lg,3), fmt(r.corr,3),
+                lg!==null?fmt(lg+r.corr,3):"",
+                (r.dBase!==undefined&&r.dBase!==null)?fmt(r.dBase,3):"",
+                r.ctrl!==null?String(r.ctrl):"",
+                nz(cl,3),
+                (lg!==null&&cl!==null)?fmt(lg-cl,3):""];
+      })
+    });
+
+    specs.push({
+      name:"pkpd_indices",
+      title:"Table 4 · PK/PD indices and predicted effect",
+      note:"One regimen gives one outcome, so the observed Δlog₁₀ below applies to every row. Only fractionation separates the indices.",
+      fields:[
+        {name:"index", label:"Index", type:"string", description:"PK/PD index name"},
+        {name:"symbol", label:"Symbol", type:"string", description:"Conventional symbol"},
+        {name:"intended", label:"Intended", type:"number", description:"Index value from the planned schedule"},
+        {name:"observed", label:"Observed", type:"number", description:"Index value from recorded assay results"},
+        {name:"ei50", label:"EI₅₀", type:"number", description:"Index value giving half-maximal effect in the Hill model"},
+        {name:"predicted_delta_log10_intended", label:"Pred. int.", type:"number", description:"Hill prediction at the intended index value"},
+        {name:"predicted_delta_log10_observed", label:"Pred. obs.", type:"number", description:"Hill prediction at the observed index value"},
+        {name:"unit", label:"Unit", type:"string", description:"Unit of the index"}
+      ],
+      rows:[
+        ["Time above MIC","%T>MIC", nz(I.T,1), nz(A.TObs,1), nz(M.EI50T,1),
+         nz(hill(I.T,M.E0,M.Emax,M.EI50T,M.H),3),
+         A.TObs!=null?fmt(hill(A.TObs,M.E0,M.Emax,M.EI50T,M.H),3):"", "percent"],
+        ["Total exposure","AUC24/MIC", nz(I.A,1), nz(A.AObs,1), nz(M.EI50A,1),
+         nz(hill(I.A,M.E0,M.Emax,M.EI50A,M.H),3),
+         A.AObs!=null?fmt(hill(A.AObs,M.E0,M.Emax,M.EI50A,M.H),3):"", "hours"],
+        ["Peak exposure","Cmax/MIC", nz(I.C,2), nz(A.CObs,2), nz(M.EI50C,2),
+         nz(hill(I.C,M.E0,M.Emax,M.EI50C,M.H),3),
+         A.CObs!=null?fmt(hill(A.CObs,M.E0,M.Emax,M.EI50C,M.H),3):"", "ratio"]
+      ],
+      extra: A.dEnd!=null
+        ? "Observed Δlog&#8321;&#8320; CFU from baseline, dilution-corrected: <strong>"+
+          (A.dEnd>0?"+":"")+fmt(A.dEnd,3)+"</strong>"+
+          (A.dEndCtrl!=null ? " · versus control at the same timepoint: <strong>"+
+           fmt(A.dEndCtrl,3)+"</strong>" : "")
+        : null
+    });
+
+    specs.push({
+      name:"sampling_plan",
+      title:"Table 5 · Sampling plan and volume accounting",
+      note:"What the protocol asked for, including what each pull cost the vessel.",
+      fields:[
+        {name:"time_min", label:"Time", type:"number", unit:"min", description:"Minutes from start of Phase A"},
+        {name:"phase", label:"Phase", type:"string", description:"Protocol phase"},
+        {name:"purpose", label:"Purpose", type:"string", description:"Viable counts, drug assay, or both"},
+        {name:"sample_volume_ml", label:"Volume", type:"number", unit:"mL", description:"Volume drawn"},
+        {name:"net_loss_ml", label:"Net loss", type:"number", unit:"mL", description:"Volume lost beyond the protocol's own withdrawal"},
+        {name:"cumulative_loss_ml", label:"Cum. loss", type:"number", unit:"mL", description:"Running total of net volume lost"},
+        {name:"dilution_correction_log10", label:"Corr.", type:"number", description:"log10 correction for protocol dilution at this time"}
+      ],
+      rows: M.samples.list.map(function(s){
+        return [fmt(s.t,1), s.phase.replace(" · ","/"),
+                (s.cfu&&s.drug)?"cfu+drug":(s.cfu?"cfu":"drug"),
+                fmt(M.svol,3), fmt(s.net,3), fmt(s.cum,3), fmt(s.corr,4)];
+      })
+    });
+
+    specs.push({
+      name:"protocol_parameters",
+      title:null,
+      fields:[
+        {name:"parameter", label:"Parameter", type:"string", description:"Input name"},
+        {name:"value", label:"Value", type:"string", description:"Value as entered"},
+        {name:"unit", label:"Unit", type:"string", description:"Unit of measure"},
+        {name:"description", label:"Description", type:"string", description:"What the input controls"}
+      ],
+      rows:[
+        ["measured_drop_rate", fmt(M.n,1), "gtt/min", "Drop rate counted at the bench"],
+        ["drop_factor", fmt(M.D,1), "gtt/mL", "Drops per mL for this tubing and medium"],
+        ["flow_rate", fmt(M.q,4), "mL/min", "Derived flow: drop rate divided by drop factor"],
+        ["starting_volume", fmt(M.V0,2), "mL", "Culture volume at t=0"],
+        ["stock_strength", fmt(M.R,2), "x target", "Drug stock as a multiple of target concentration"],
+        ["absorption_half_time", fmt(M.T1,2), "min", "Target half-time of the rise"],
+        ["elimination_half_life", fmt(M.T2,2), "min", "Target half-life of the decay"],
+        ["control_interval", fmt(M.dt,2), "min", "How often the clamp is adjusted"],
+        ["decay_duration", fmt(M.dur,1), "half-lives", "Length of Phase B"],
+        ["target_peak_concentration", fmt(M.Ctgt,4), "mg/L", "Intended peak drug concentration"],
+        ["starting_inoculum_log10", fmt(M.N0,2), "log10 CFU/mL", "Nominal starting inoculum"],
+        ["sample_volume", fmt(M.svol,3), "mL", "Volume drawn per timepoint"],
+        ["cfu_cadence", fmt(M.scad,1), "min", "Spacing of viable-count timepoints"],
+        ["decay_mode", mode, "", "exchange = constant volume; dilution = growing volume"],
+        ["mic", fmt(M.MIC,4), "mg/L", "Minimum inhibitory concentration"],
+        ["hill_e0", fmt(M.E0,3), "log10", "Control growth in the Hill model"],
+        ["hill_emax", fmt(M.Emax,3), "log10", "Maximum effect span in the Hill model"],
+        ["hill_slope", fmt(M.H,3), "", "Hill slope"],
+        ["ei50_time_above_mic", fmt(M.EI50T,3), "percent", "Half-maximal %T>MIC"],
+        ["ei50_auc_over_mic", fmt(M.EI50A,3), "hours", "Half-maximal AUC24/MIC"],
+        ["ei50_cmax_over_mic", fmt(M.EI50C,3), "ratio", "Half-maximal Cmax/MIC"],
+        ["exposure_response_set", el.pdclass.value, "", "Which class preset the Hill parameters came from"]
+      ]
+    });
+
+    return specs;
+  }
+
+  function renderFigTables(M){
+    document.getElementById("figTables").innerHTML = M.specs.filter(function(sp){
+      return sp.title;
+    }).map(function(sp){
+      var head = sp.fields.map(function(f){
+        return '<th>'+f.label+(f.unit?' <span style="font-weight:400;text-transform:none">('+f.unit+')</span>':'')+'</th>';
+      }).join("");
+      var body = sp.rows.length
+        ? sp.rows.map(function(r){
+            return '<tr>'+r.map(function(c){
+              return '<td>'+(c===""?'<span style="color:var(--ink-3)">—</span>':c)+'</td>';
+            }).join("")+'</tr>';
+          }).join("")
+        : '<tr><td colspan="'+sp.fields.length+'" style="color:var(--ink-3)">No rows yet — record some results in section 8.</td></tr>';
+      return '<div class="figtab">'+
+        '<div class="caption"><h3>'+sp.title+'</h3><p>'+(sp.note||"")+'</p>'+
+        '<button type="button" class="copybtn" data-copy="'+sp.name+'">Copy TSV</button></div>'+
+        '<div class="tablewrap" style="max-height:340px;"><table><thead><tr>'+head+'</tr></thead>'+
+        '<tbody>'+body+'</tbody></table></div>'+
+        (sp.extra ? '<p class="note" style="margin-top:8px;">'+sp.extra+'</p>' : '')+
+        '</div>';
+    }).join("");
+  }
+
+  // ---------- serialisation ----------
+  function csvCell(v){
+    var s = (v===null||v===undefined) ? "" : String(v);
+    return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+  function toCSV(sp){
+    return [sp.fields.map(function(f){ return csvCell(f.name); }).join(",")]
+      .concat(sp.rows.map(function(r){ return r.map(csvCell).join(","); }))
+      .join("\r\n") + "\r\n";
+  }
+  function toTSV(sp){
+    return [sp.fields.map(function(f){ return f.label+(f.unit?" ("+f.unit+")":""); }).join("\t")]
+      .concat(sp.rows.map(function(r){ return r.join("\t"); }))
+      .join("\n");
+  }
+  function slug(s, fb){
+    var x=(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+    return x || fb;
+  }
+
+  var SITE = "https://jacobkmcpherson.github.io/chemostat_drip_builder/";
+  var REPO = "https://github.com/JacobKMcPherson/chemostat_drip_builder";
+
+  function buildDatapackage(M){
+    var m = meta(), now = new Date().toISOString();
+    var kw = ["pharmacokinetics","pharmacodynamics","time-kill","fed-batch",
+              "in vitro PK/PD","antimicrobial","MIC","dose fractionation"];
+    if(m.mDrug) kw.push(m.mDrug);
+    if(m.mOrganism) kw.push(m.mOrganism);
+
+    var contributors = [];
+    if(m.mAuthor){
+      var c = {title:m.mAuthor, role:"author"};
+      if(m.mOrcid) c.path = "https://orcid.org/"+m.mOrcid.replace(/^https?:\/\/orcid\.org\//,"");
+      if(m.mOrg) c.organization = m.mOrg;
+      contributors.push(c);
+    }
+
+    var desc = m.mDesc ||
+      "Fed-batch one-compartment PK/PD run: duty-cycle gravity dosing with no outflow, "+
+      "paired drug concentrations and viable counts.";
+    if(synthetic) desc = "*** CONTAINS SIMULATED VALUES - NOT MEASURED DATA *** " + desc;
+
+    return {
+      profile:"tabular-data-package",
+      name: slug(m.mTitle, "fed-batch-pkpd-dataset"),
+      title: m.mTitle || "Fed-batch PK/PD run",
+      description: desc,
+      created: now,
+      version: "1.0.0",
+      homepage: SITE,
+      licenses:[{
+        name:"CC-BY-4.0",
+        path:"https://creativecommons.org/licenses/by/4.0/",
+        title:"Creative Commons Attribution 4.0 International"
+      }],
+      keywords: kw,
+      contributors: contributors,
+      experiment:{
+        drug: m.mDrug || null,
+        organism: m.mOrganism || null,
+        medium: m.mMedium || null,
+        run_id: m.mRun || null,
+        mic_mg_per_L: M.MIC,
+        decay_mode: mode,
+        contains_simulated_values: synthetic
+      },
+      provenance:{
+        generated_by:"Drip Schedule Builder",
+        software_url: SITE,
+        source_code: REPO,
+        generated_at: now,
+        model:"One-compartment fed-batch approximation; concentration is mass over a moving volume.",
+        assumptions:[
+          "Complete mixing within each control interval.",
+          "No drug binding to vessel or tubing, and no degradation over the run.",
+          "Dilution correction assumes sterile diluent replaces withdrawn volume.",
+          "Control arm, where recorded, receives identical volume handling so dilution cancels.",
+          "AUC24 assumes the regimen repeats unchanged for 24 h.",
+          "A single regimen cannot identify which PK/PD index drives effect."
+        ]
+      },
+      resources: M.specs.map(function(sp){
+        return {
+          name: sp.name,
+          path: "data/"+sp.name+".csv",
+          profile:"tabular-data-resource",
+          format:"csv",
+          mediatype:"text/csv",
+          encoding:"utf-8",
+          title: sp.title ? sp.title.replace(/^Table \d+ · /,"") : "Protocol inputs with units",
+          dialect:{delimiter:",", lineTerminator:"\r\n", header:true},
+          schema:{ fields: sp.fields.map(function(f){
+            var o = {name:f.name, type:f.type, description:f.description};
+            if(f.unit) o.unit = f.unit;
+            return o;
+          })}
+        };
+      })
+    };
+  }
+
+  function buildReadme(M){
+    var m = meta(), A = M.analysis, I = M.pd, L = [];
+    L.push("# "+(m.mTitle || "Fed-batch PK/PD run"));
+    L.push("");
+    if(synthetic){
+      L.push("> **WARNING - THIS PACKAGE CONTAINS SIMULATED VALUES.**");
+      L.push("> Some or all assay results were generated by the calculator's demo filler,");
+      L.push("> not measured at a bench. Do not cite, publish, or pool these as real data.");
+      L.push("");
+    }
+    if(m.mDesc){ L.push(m.mDesc); L.push(""); }
+    L.push("Generated by [Drip Schedule Builder]("+SITE+") on "+new Date().toISOString()+".");
+    L.push("");
+    L.push("## Experiment");
+    L.push("");
+    L.push("| Field | Value |");
+    L.push("| --- | --- |");
+    [["Investigator",m.mAuthor],["ORCID",m.mOrcid],["Institution",m.mOrg],
+     ["Drug",m.mDrug],["Organism / strain",m.mOrganism],["Medium",m.mMedium],
+     ["Run / replicate",m.mRun],["MIC",fmt(M.MIC,4)+" mg/L"],
+     ["Decay mode",mode==="exchange"?"exchange (constant volume)":"dilution only (growing volume)"]
+    ].forEach(function(p){ if(p[1]) L.push("| "+p[0]+" | "+p[1]+" |"); });
+    L.push("");
+    L.push("## Method");
+    L.push("");
+    L.push("Drug was delivered into a "+fmt(M.V0,1)+" mL fed-batch vessel with no outflow, by gravity");
+    L.push("drip at a measured "+fmt(M.n,0)+" gtt/min through a "+fmt(M.D,0)+" gtt/mL set ("+
+           fmt(M.q,3)+" mL/min), using");
+    L.push("a duty cycle recalculated every "+fmt(M.dt,0)+" min. Phase A reproduced a "+
+           fmt(M.T1,0)+" min absorption");
+    L.push("half-time by delivering a "+fmt(M.R,0)+"x stock; Phase B reproduced a "+
+           fmt(M.T2,0)+" min elimination");
+    L.push("half-life over "+fmt(M.dur,0)+" half-lives "+(mode==="exchange"
+      ? "by removing and replacing a fixed volume fraction each"
+      : "by adding diluent only, so vessel volume grew"));
+    L.push(mode==="exchange" ? "interval, holding volume constant." : "exponentially.");
+    L.push("");
+    L.push("Because concentration in a vessel with no outflow is mass over a *moving* volume, both");
+    L.push("phases are volume bookkeeping rather than a simple first-order rate constant. Full");
+    L.push("derivations are in the calculator's own documentation at the URL above.");
+    L.push("");
+    L.push("Samples of "+fmt(M.svol,2)+" mL were drawn on the schedule in `data/sampling_plan.csv`.");
+    L.push("Viable counts were taken every "+fmt(M.scad,0)+" min; drug assays were spaced");
+    L.push("logarithmically around the rise, the peak, and successive half-lives of the decay.");
+    L.push("");
+    L.push("## The dilution correction");
+    L.push("");
+    L.push("Withdrawing broth does not change CFU/mL - cells and medium leave in the same");
+    L.push("proportion. Replacing that volume with sterile diluent does. Every reported change in");
+    L.push("viable count is therefore corrected:");
+    L.push("");
+    L.push("```text");
+    L.push("delta_log10_CFU(drug) = log10(N_obs / N_0) - log10(dilution_factor)");
+    L.push("```");
+    L.push("");
+    L.push("In exchange mode the factor is `(1 - dV/V)^steps`; in dilution mode it is `V_peak/V(t)`.");
+    L.push("Both raw and corrected counts appear in `data/time_kill.csv`, so the correction can be");
+    L.push("audited or undone.");
+    L.push("");
+    if(A.t2Obs!=null || A.dEnd!=null){
+      L.push("## Headline results");
+      L.push("");
+      if(A.t2Obs!=null){
+        L.push("- Observed elimination half-life **"+fmt(A.t2Obs,1)+" min** (intended "+fmt(M.T2,0)+
+               " min), fitted log-linearly on "+A.nTerm+" post-peak concentrations, R2 = "+fmt(A.r2,3)+".");
+      }
+      if(A.cmax!=null) L.push("- Observed Cmax **"+fmt(A.cmax,2)+" mg/L** (intended "+fmt(I.cmax,2)+" mg/L).");
+      if(A.aucObs!=null) L.push("- Observed AUC over the run **"+fmt(A.aucObs,1)+" mg.h/L**.");
+      if(A.TObs!=null) L.push("- Observed %T>MIC **"+fmt(A.TObs,0)+"%**, AUC24/MIC **"+fmt(A.AObs,0)+
+                              "**, Cmax/MIC **"+fmt(A.CObs,1)+"**.");
+      if(A.dEnd!=null) L.push("- Dilution-corrected change in viable count at "+fmt(A.tEndK,0)+
+                              " min: **"+(A.dEnd>0?"+":"")+fmt(A.dEnd,2)+" log10**"+
+                              (A.dEndRaw!=null?" (raw "+(A.dEndRaw>0?"+":"")+fmt(A.dEndRaw,2)+")":"")+".");
+      if(A.regrowth!=null && A.regrowth>0.5) L.push("- Regrowth of "+fmt(A.regrowth,2)+
+                              " log10 after a nadir at "+fmt(A.tNadir,0)+" min.");
+      if(A.ctrlGrowth!=null) L.push("- Untreated control grew "+(A.ctrlGrowth>0?"+":"")+
+                              fmt(A.ctrlGrowth,2)+" log10 over the run.");
+      L.push("");
+    }
+    L.push("## Files");
+    L.push("");
+    L.push("| Path | Contents |");
+    L.push("| --- | --- |");
+    L.push("| `datapackage.json` | Frictionless descriptor: types, units, licence, provenance |");
+    M.specs.forEach(function(sp){
+      L.push("| `data/"+sp.name+".csv` | "+
+             (sp.title ? sp.title.replace(/^Table \d+ · /,"") : "Protocol inputs with units")+" |");
+    });
+    L.push("| `CITATION.cff` | Machine-readable citation metadata |");
+    L.push("| `LICENSE.txt` | CC BY 4.0 |");
+    L.push("");
+    L.push("## Column dictionary");
+    L.push("");
+    M.specs.forEach(function(sp){
+      L.push("### `data/"+sp.name+".csv`");
+      L.push("");
+      L.push("| Column | Type | Unit | Meaning |");
+      L.push("| --- | --- | --- | --- |");
+      sp.fields.forEach(function(f){
+        L.push("| `"+f.name+"` | "+f.type+" | "+(f.unit||"-")+" | "+f.description+" |");
+      });
+      L.push("");
+    });
+    L.push("## Assumptions and limits");
+    L.push("");
+    L.push("- Complete mixing within each control interval.");
+    L.push("- No drug binding to vessel or tubing, and no degradation over the run.");
+    L.push("- The control arm, where recorded, is assumed to receive identical volume handling, so");
+    L.push("  dilution cancels in the treated-minus-control comparison.");
+    L.push("- AUC24 assumes the regimen repeats unchanged for 24 h; the run itself is shorter.");
+    L.push("- Hill parameters in `pkpd_indices.csv` are whatever was entered in the calculator.");
+    L.push("  Class presets are illustrative, not calibrated for any particular organism.");
+    L.push("- **A single regimen cannot identify which PK/PD index drives effect** - the three move");
+    L.push("  together. Dose fractionation is required to separate them.");
+    L.push("");
+    L.push("## Reuse");
+    L.push("");
+    L.push("Data are licensed CC BY 4.0 (SPDX: `CC-BY-4.0`). Attribute the investigator named above.");
+    L.push("To make this package citable, deposit it in Zenodo, Dryad, or an institutional repository");
+    L.push("to mint a DOI, then add that DOI to `CITATION.cff` and `datapackage.json`.");
+    L.push("");
+    return L.join("\n");
+  }
+
+  function buildCitation(M){
+    var m = meta(), L = [];
+    L.push("cff-version: 1.2.0");
+    L.push('message: "If you use this dataset, please cite it as below."');
+    L.push("type: dataset");
+    L.push('title: "'+(m.mTitle || "Fed-batch PK/PD run").replace(/"/g,"'")+'"');
+    L.push("authors:");
+    if(m.mAuthor){
+      var parts = m.mAuthor.trim().split(/\s+/);
+      if(parts.length > 1){
+        var family = parts.pop();
+        L.push('  - family-names: "'+family.replace(/"/g,"'")+'"');
+        L.push('    given-names: "'+parts.join(" ").replace(/"/g,"'")+'"');
+      } else {
+        L.push('  - name: "'+m.mAuthor.replace(/"/g,"'")+'"');
+      }
+      if(m.mOrcid){
+        L.push('    orcid: "https://orcid.org/'+
+               m.mOrcid.replace(/^https?:\/\/orcid\.org\//,"").replace(/"/g,"")+'"');
+      }
+      if(m.mOrg) L.push('    affiliation: "'+m.mOrg.replace(/"/g,"'")+'"');
+    } else {
+      L.push('  - name: "Unattributed"');
+    }
+    L.push("date-released: "+new Date().toISOString().slice(0,10));
+    L.push("version: 1.0.0");
+    L.push("license: CC-BY-4.0");
+    L.push("url: "+SITE);
+    if(m.mDesc) L.push('abstract: "'+m.mDesc.replace(/"/g,"'")+'"');
+    var kw = [];
+    if(m.mDrug) kw.push(m.mDrug);
+    if(m.mOrganism) kw.push(m.mOrganism);
+    kw.push("pharmacokinetics","pharmacodynamics","time-kill");
+    L.push("keywords:");
+    kw.forEach(function(k){ L.push('  - "'+k.replace(/"/g,"'")+'"'); });
+    L.push("");
+    return L.join("\n");
+  }
+
+  var LICENSE_TXT = [
+    "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "SPDX-License-Identifier: CC-BY-4.0",
+    "",
+    "The data in this package are licensed under the Creative Commons Attribution 4.0",
+    "International License. You are free to share and adapt the material for any purpose,",
+    "including commercially, provided you give appropriate credit, link to the licence,",
+    "and indicate if changes were made.",
+    "",
+    "Full legal code:  https://creativecommons.org/licenses/by/4.0/legalcode",
+    "Plain summary:    https://creativecommons.org/licenses/by/4.0/",
+    "",
+    "The Drip Schedule Builder software that produced this package is separately licensed",
+    "under the MIT Licence: "+REPO,
+    ""
+  ].join("\n");
+
+  // ---------- zip writer (store method, no dependencies) ----------
+  var CRCT = (function(){
+    var t = new Uint32Array(256);
+    for(var i=0;i<256;i++){
+      var c=i;
+      for(var k=0;k<8;k++) c = (c&1) ? (0xEDB88320^(c>>>1)) : (c>>>1);
+      t[i]=c>>>0;
+    }
+    return t;
+  })();
+  function crc32(b){
+    var c=0xFFFFFFFF;
+    for(var i=0;i<b.length;i++) c = CRCT[(c^b[i])&0xFF] ^ (c>>>8);
+    return (c^0xFFFFFFFF)>>>0;
+  }
+  function zip(files){
+    var enc = new TextEncoder(), local=[], central=[], offset=0, d=new Date();
+    var dosTime = ((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1)) & 0xFFFF;
+    var dosDate = (((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate()) & 0xFFFF;
+    files.forEach(function(f){
+      var name=enc.encode(f.name), data=enc.encode(f.text), crc=crc32(data);
+      var lh=new Uint8Array(30+name.length), lv=new DataView(lh.buffer);
+      lv.setUint32(0,0x04034b50,true); lv.setUint16(4,20,true);
+      lv.setUint16(6,0x0800,true);     lv.setUint16(8,0,true);
+      lv.setUint16(10,dosTime,true);   lv.setUint16(12,dosDate,true);
+      lv.setUint32(14,crc,true);       lv.setUint32(18,data.length,true);
+      lv.setUint32(22,data.length,true);
+      lv.setUint16(26,name.length,true); lv.setUint16(28,0,true);
+      lh.set(name,30);
+      local.push(lh, data);
+
+      var ch=new Uint8Array(46+name.length), cv=new DataView(ch.buffer);
+      cv.setUint32(0,0x02014b50,true); cv.setUint16(4,20,true); cv.setUint16(6,20,true);
+      cv.setUint16(8,0x0800,true);     cv.setUint16(10,0,true);
+      cv.setUint16(12,dosTime,true);   cv.setUint16(14,dosDate,true);
+      cv.setUint32(16,crc,true);       cv.setUint32(20,data.length,true);
+      cv.setUint32(24,data.length,true);
+      cv.setUint16(28,name.length,true); cv.setUint16(30,0,true); cv.setUint16(32,0,true);
+      cv.setUint16(34,0,true); cv.setUint16(36,0,true); cv.setUint32(38,0,true);
+      cv.setUint32(42,offset,true);
+      ch.set(name,46);
+      central.push(ch);
+      offset += lh.length + data.length;
+    });
+    var cdSize = central.reduce(function(a,b){ return a+b.length; },0);
+    var eo=new Uint8Array(22), ev=new DataView(eo.buffer);
+    ev.setUint32(0,0x06054b50,true);
+    ev.setUint16(4,0,true); ev.setUint16(6,0,true);
+    ev.setUint16(8,files.length,true); ev.setUint16(10,files.length,true);
+    ev.setUint32(12,cdSize,true); ev.setUint32(16,offset,true); ev.setUint16(20,0,true);
+    return new Blob(local.concat(central,[eo]), {type:"application/zip"});
+  }
+
+  function download(blob, filename){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 0);
+  }
+
+  function packageFiles(M){
+    var files = [
+      {name:"datapackage.json", text:JSON.stringify(buildDatapackage(M), null, 2)},
+      {name:"README.md",        text:buildReadme(M)},
+      {name:"CITATION.cff",     text:buildCitation(M)},
+      {name:"LICENSE.txt",      text:LICENSE_TXT}
+    ];
+    M.specs.forEach(function(sp){
+      files.push({name:"data/"+sp.name+".csv", text:toCSV(sp)});
+    });
+    return files;
+  }
+
+  function status(id, msg, isErr){
+    document.getElementById(id).innerHTML =
+      '<div class="statusmsg'+(isErr?" err":"")+'">'+msg+'</div>';
   }
 
   function run(){
@@ -1227,6 +2332,10 @@
     M.profile = profile(M);
     M.pd = pdIndices(M);
     M.samples = sampling(M);
+    M.rows = buildRows(M);
+    M.analysis = analyse(M, M.rows);
+    M.specs = tableSpecs(M);
+    CUR = M;
     renderReadout(M);
     renderVerdicts(M);
     renderCeilings(M);
@@ -1234,8 +2343,24 @@
     renderChart(M);
     renderSampling(M);
     renderPD(M);
+    renderEntry(M);
+    renderObs(M);
+    renderFigTables(M);
     document.getElementById("rEcho").textContent = fmt(M.R,0);
     save();
+  }
+
+  // Recompute only what depends on recorded values, so typing in the entry
+  // table never rebuilds the inputs the user is typing into.
+  function refresh(){
+    if(!CUR) return;
+    CUR.rows = buildRows(CUR);
+    CUR.analysis = analyse(CUR, CUR.rows);
+    CUR.specs = tableSpecs(CUR);
+    renderObs(CUR);
+    renderFigTables(CUR);
+    renderPD(CUR);
+    renderEntryStatus(CUR);
   }
 
   var PDFIELDS = ["E0","Emax","Hill","EI50T","EI50A","EI50C"];
@@ -1252,6 +2377,114 @@
 
   ids.forEach(function(k){
     if(k !== "pdclass") el[k].addEventListener("input", run);
+  });
+
+  METAIDS.forEach(function(k){
+    el[k].addEventListener("input", function(){ saveMeta(); status("exportStatus",""); });
+  });
+
+  // Delegated so that re-rendering the table never tears out the field being typed in.
+  document.getElementById("entryTable").addEventListener("input", function(e){
+    var t = e.target;
+    if(!t.dataset || !t.dataset.field) return;
+    var key = t.dataset.time, f = t.dataset.field, v = parseFloat(t.value);
+    if(!obs[key]) obs[key] = {};
+    if(t.value === "" || !isFinite(v) || v < 0) delete obs[key][f];
+    else obs[key][f] = v;
+    if(!Object.keys(obs[key]).length) delete obs[key];
+    t.classList.toggle("filled", t.value !== "");
+    saveObs();
+    refresh();
+  });
+
+  document.getElementById("entryTable").addEventListener("click", function(e){
+    var k = e.target && e.target.dataset ? e.target.dataset.drop : null;
+    if(!k) return;
+    delete obs[k];
+    extraTimes = extraTimes.filter(function(t){ return (+t).toFixed(1) !== k; });
+    saveObs();
+    run();
+  });
+
+  document.getElementById("addTime").addEventListener("click", function(){
+    var v = parseFloat(document.getElementById("addT").value);
+    if(!isFinite(v) || v < 0){ status("obsStatus","Enter a time in minutes first.",true); return; }
+    var k = v.toFixed(1);
+    if(extraTimes.indexOf(v) === -1) extraTimes.push(v);
+    if(!obs[k]) obs[k] = {};
+    saveObs();
+    document.getElementById("addT").value = "";
+    run();
+  });
+
+  document.getElementById("clearObs").addEventListener("click", function(){
+    if(!confirm("Delete every recorded value and off-plan timepoint? This cannot be undone.")) return;
+    obs = {}; extraTimes = []; synthetic = false;
+    saveObs();
+    run();
+  });
+
+  // Plausible values from the model plus noise, for trying the pipeline end to end.
+  document.getElementById("demoFill").addEventListener("click", function(){
+    if(Object.keys(obs).length &&
+       !confirm("Overwrite the values already recorded with simulated ones?")) return;
+    var M = CUR || model();
+    obs = {}; synthetic = true;
+    var N0 = Math.pow(10, M.N0);
+    var kkill = 0.010, kgrow = 0.0016;
+    M.samples.list.forEach(function(s){
+      var rec = {};
+      var cTrue = interpC(M.profile, s.t);
+      if(s.drug && cTrue > 0) rec.c = +(cTrue*(1+(Math.random()-0.5)*0.16)).toFixed(4);
+      if(s.cfu){
+        var eff = cTrue > M.MIC ? kkill*Math.min(1, cTrue/(4*M.MIC)) : -kgrow;
+        var live = N0*Math.exp(-eff*s.t)*Math.pow(10,-s.corr);
+        var ctrl = N0*Math.exp(kgrow*s.t);
+        rec.cfu  = Math.round(live*Math.pow(10,(Math.random()-0.5)*0.2));
+        rec.ctrl = Math.round(Math.min(ctrl, 1e9)*Math.pow(10,(Math.random()-0.5)*0.16));
+      }
+      if(Object.keys(rec).length) obs[s.t.toFixed(1)] = rec;
+    });
+    saveObs();
+    run();
+  });
+
+  document.getElementById("figTables").addEventListener("click", function(e){
+    var name = e.target && e.target.dataset ? e.target.dataset.copy : null;
+    if(!name || !CUR) return;
+    var sp = CUR.specs.filter(function(s){ return s.name === name; })[0];
+    if(!sp) return;
+    var text = toTSV(sp), btn = e.target, old = btn.textContent;
+    function done(ok){
+      btn.textContent = ok ? "Copied" : "Copy failed";
+      setTimeout(function(){ btn.textContent = old; }, 1400);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(false); });
+    } else { done(false); }
+  });
+
+  document.getElementById("dlZip").addEventListener("click", function(){
+    if(!CUR) return;
+    try{
+      var files = packageFiles(CUR);
+      var m = meta();
+      var stamp = new Date().toISOString().slice(0,10);
+      var base = slug(m.mRun || m.mTitle, "fed-batch-pkpd");
+      download(zip(files), base+"_"+stamp+".zip");
+      status("exportStatus", "Wrote "+files.length+" files"+
+        (synthetic ? " — flagged as containing simulated values." : "."));
+    }catch(err){
+      status("exportStatus", "Export failed: "+err.message, true);
+    }
+  });
+
+  document.getElementById("dlJson").addEventListener("click", function(){
+    if(!CUR) return;
+    var pre = document.getElementById("jsonPreview");
+    if(!pre.hidden){ pre.hidden = true; return; }
+    pre.textContent = JSON.stringify(buildDatapackage(CUR), null, 2);
+    pre.hidden = false;
   });
 
   var bEx = document.getElementById("modeEx"), bDil = document.getElementById("modeDil");
