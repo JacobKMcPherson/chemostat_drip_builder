@@ -50,6 +50,59 @@ exponential volume growth — the vessel doubles every half-life, and cells dilu
 `ke`, confounding CFU counts with the clearance you are trying to impose. Included for
 comparison; rarely practical past two half-lives.
 
+## Longitudinal sampling
+
+The page builds a timed sampling plan on top of the schedule: evenly spaced CFU timepoints at
+a cadence you choose, plus log-spaced drug-assay points placed around the rise, the peak, and
+successive half-lives of the decay.
+
+Phase B sample times are snapped to control-interval boundaries, because in exchange mode the
+withdrawal you already owe the protocol **is** the sample. Anything up to `ΔV` is free; only
+volume beyond that is a net loss, and the table prices each pull accordingly.
+
+The column that matters most is the CFU correction. Withdrawing broth does not change CFU/mL —
+you take cells and medium in the same proportion. *Replacing* that volume with sterile diluent
+does:
+
+```
+Δlog10 CFU (drug) = log10(N_obs / N₀) − log10(dilution factor)
+```
+
+The factor is `(1 − ΔV/V)^steps` in exchange mode — flat, predictable, and small — versus
+`V_peak/V(t)` in dilution mode, which compounds at exactly `ke`. At default settings the
+exchange-mode correction still reaches ~1.2 log10 over four half-lives, so it is not optional
+bookkeeping; uncorrected, the regimen reads more than a log more active than it is.
+
+## Pharmacodynamics
+
+The bottom section converts the *delivered* staircase — not the ideal curve — into the three
+conventional PK/PD indices, by trapezoid over the interval endpoints, which is the same
+arithmetic you would apply to assayed samples:
+
+| Index | Definition |
+|---|---|
+| `%T>MIC` | fraction of the cycle with `C(t) > MIC`, by linear interpolation across the crossing |
+| `AUC₂₄/MIC` | AUC over one full cycle, scaled to 24 h on the assumption the regimen repeats |
+| `Cmax/MIC` | peak delivered concentration over MIC |
+
+Each is plotted against change in log10 CFU using a sigmoid Emax model, with the current
+schedule marked:
+
+```
+Δlog10 CFU = E₀ − Emax · I^H / (EI₅₀^H + I^H)
+```
+
+Class presets load illustrative Hill parameters and flag the index that class is normally
+driven by; editing any parameter switches to custom and drops the claim. **These defaults are
+class-typical illustrations, not calibrated constants** — real EI₅₀ values move with organism,
+strain, inoculum, growth phase, and endpoint window. Fit your own and type them in.
+
+One caveat is built into the page because it is easy to forget: **a single regimen cannot tell
+you which index is driving the effect.** Within one schedule all three indices rise together,
+so all three curves fit equally well. Separating them is what dose fractionation is for — hold
+the total daily dose constant and redistribute it across different numbers of doses per day.
+Only the driving index stays predictive. The marked point is a prediction to test, not a result.
+
 ## Feasibility limits
 
 The page flags any interval where the clamp would need to be open more than 100% of the

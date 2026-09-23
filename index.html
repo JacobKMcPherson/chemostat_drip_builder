@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Bench calculator that turns a measured gravity drip rate into a duty-cycle dosing schedule reproducing one-compartment pharmacokinetics in a fed-batch culture vessel.">
+<meta name="description" content="Bench calculator that turns a measured gravity drip rate into a duty-cycle dosing schedule reproducing one-compartment pharmacokinetics in a fed-batch culture vessel, with a longitudinal sampling plan and %T>MIC, AUC/MIC and Cmax/MIC exposure-response plots.">
 <meta name="color-scheme" content="light dark">
 <style>
   :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
@@ -214,6 +214,22 @@
     padding:10px 13px;border-radius:0 7px 7px 0;margin:11px 0;
     overflow-x:auto;color:var(--ink);
   }
+
+  /* ---- pd plots ---- */
+  .plots{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;}
+  @media (max-width:880px){ .plots{grid-template-columns:1fr;} }
+  .plotcard{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);padding:11px 11px 6px;}
+  .plotcard h3{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .plotcard .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);margin-top:3px;}
+  .badge{
+    font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+    border:1px solid currentColor;border-radius:999px;padding:1px 6px;font-weight:600;white-space:nowrap;
+  }
+  .badge.drive{color:var(--accent);}
+  .badge.corr{color:var(--ink-3);}
+  tbody td.tag-cfu{color:var(--good);font-weight:600;}
+  tbody td.tag-drug{color:var(--accent);font-weight:600;}
+
   footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3);}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 </style>
@@ -270,6 +286,15 @@
         <div class="field">
           <label for="dur">Decay run time <span class="unit">&times; t&frac12;</span></label>
           <input id="dur" type="number" value="4" min="1" max="8" step="1">
+        </div>
+        <div class="field">
+          <label for="Ctgt">Target peak conc. <span class="unit">mg/L</span></label>
+          <input id="Ctgt" type="number" value="8" min="0.001" step="0.5">
+          <div class="hint">The concentration your stock is <span id="rEcho">20</span>&times; above. Sets the absolute scale for sampling and PD.</div>
+        </div>
+        <div class="field">
+          <label for="N0">Starting inoculum <span class="unit">log&#8321;&#8320; CFU/mL</span></label>
+          <input id="N0" type="number" value="6" min="1" max="10" step="0.1">
         </div>
       </div>
     </div>
@@ -351,7 +376,44 @@
   </section>
 
   <section>
-    <div class="sechead"><h2>6 · Bench procedure</h2></div>
+    <div class="sechead">
+      <h2>6 &middot; Longitudinal sampling</h2>
+      <p>When to pull, how much, and what the volume costs you.</p>
+    </div>
+    <div class="panel">
+      <div class="grid">
+        <div class="field">
+          <label for="svol">Sample volume <span class="unit">mL</span></label>
+          <input id="svol" type="number" value="1" min="0.05" step="0.1">
+          <div class="hint">Enough for a dilution series plus an assay aliquot. 1 mL supports 10&#8315;&sup1;&ndash;10&#8315;&#8310; and ~0.5 mL to spare.</div>
+        </div>
+        <div class="field">
+          <label for="scad">CFU cadence <span class="unit">min</span></label>
+          <input id="scad" type="number" value="60" min="1" step="5">
+          <div class="hint">Even spacing for kill curves. Drug-assay points are placed separately, log-spaced around the curve.</div>
+        </div>
+      </div>
+
+      <dl class="readout" id="sampreadout"></dl>
+      <div id="sampverdicts"></div>
+
+      <p class="note" style="margin-top:16px;">In exchange mode the withdrawal you already owe the protocol <strong>is</strong> your sample. Only volume beyond that withdrawal is a net loss, and the table prices each pull accordingly.</p>
+
+      <div class="tablewrap" style="margin-top:12px;">
+        <table id="sampTable">
+          <thead><tr><th>Clock</th><th>Phase</th><th>Pull for</th><th>Volume (mL)</th><th>Net loss (mL)</th><th>Cum. loss</th><th>Drug (mg/L)</th><th>C / MIC</th><th>CFU corr. (log&#8321;&#8320;)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <p class="note" style="margin-top:14px;"><strong>Read the correction column before you report killing.</strong> Removing broth does not change CFU/mL &mdash; you take cells and medium in the same proportion. Replacing that volume with sterile diluent <em>does</em>. The correction is the log&#8321;&#8320; you must <strong>add back</strong> to an observed count to recover the change attributable to drug:</p>
+      <div class="eq">&Delta;log&#8321;&#8320; CFU (drug) = log&#8321;&#8320;(N_obs / N&#8320;) &minus; log&#8321;&#8320;(dilution factor)</div>
+      <p class="note">The factor is <span style="font-family:'IBM Plex Mono',monospace">(1 &minus; &Delta;V/V)<sup>steps</sup></span> in exchange mode &mdash; flat, predictable, and small. In dilution mode it is <span style="font-family:'IBM Plex Mono',monospace">V_peak/V(t)</span>, which compounds at exactly k&#8337; and is the reason that mode confounds kill measurement.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>7 · Bench procedure</h2></div>
     <div class="panel">
       <ol class="steps">
         <li><strong>Calibrate the drop factor once per tubing lot.</strong> Count 100 drops of your actual diluent into a tared tube and weigh it. Viscous or surfactant-containing media give drops well off the nominal 60 gtt/mL; using the number on the box is the largest avoidable error in this whole protocol.</li>
@@ -366,7 +428,7 @@
   </section>
 
   <section>
-    <div class="sechead"><h2>7 · The math being used</h2></div>
+    <div class="sechead"><h2>8 · The math being used</h2></div>
     <div class="panel">
       <p class="note">With nothing leaving the vessel, concentration is mass over a moving volume, so both phases are volume bookkeeping.</p>
       <div class="eq">q = n / D          mL/min from n drops/min at D gtt/mL</div>
@@ -380,6 +442,70 @@
     </div>
   </section>
 
+  <section>
+    <div class="sechead">
+      <h2>9 &middot; Pharmacodynamic response</h2>
+      <p>Where this exposure lands on the three PK/PD indices.</p>
+    </div>
+    <div class="panel">
+      <div class="grid">
+        <div class="field">
+          <label for="MIC">MIC <span class="unit">mg/L</span></label>
+          <input id="MIC" type="number" value="1" min="0.001" step="0.25">
+        </div>
+        <div class="field">
+          <label for="pdclass">Exposure&ndash;response set</label>
+          <select id="pdclass">
+            <option value="betalactam">&beta;-lactam</option>
+            <option value="fluoroquinolone">Fluoroquinolone</option>
+            <option value="aminoglycoside">Aminoglycoside</option>
+            <option value="glycopeptide">Glycopeptide</option>
+            <option value="custom">Custom</option>
+          </select>
+          <div class="hint">Loads illustrative Hill parameters and marks the index that class is normally driven by. Edit any field to switch to custom.</div>
+        </div>
+        <div class="field">
+          <label for="E0">Control growth <span class="unit">&Delta;log&#8321;&#8320;</span></label>
+          <input id="E0" type="number" value="2" min="0" max="6" step="0.1">
+          <div class="hint">Untreated growth over the same window. The top of every curve.</div>
+        </div>
+        <div class="field">
+          <label for="Emax">E<sub>max</sub> <span class="unit">log&#8321;&#8320; span</span></label>
+          <input id="Emax" type="number" value="5" min="0.5" max="10" step="0.1">
+          <div class="hint">Full range from control growth to maximum kill.</div>
+        </div>
+        <div class="field">
+          <label for="Hill">Hill slope</label>
+          <input id="Hill" type="number" value="3" min="0.2" max="20" step="0.1">
+        </div>
+        <div class="field">
+          <label for="EI50T">EI&#8325;&#8320; &mdash; %T&gt;MIC</label>
+          <input id="EI50T" type="number" value="40" min="0.1" max="100" step="1">
+        </div>
+        <div class="field">
+          <label for="EI50A">EI&#8325;&#8320; &mdash; AUC&#8322;&#8324;/MIC</label>
+          <input id="EI50A" type="number" value="120" min="0.1" step="5">
+        </div>
+        <div class="field">
+          <label for="EI50C">EI&#8325;&#8320; &mdash; C<sub>max</sub>/MIC</label>
+          <input id="EI50C" type="number" value="4" min="0.05" step="0.5">
+        </div>
+      </div>
+
+      <dl class="readout" id="pdreadout"></dl>
+      <div id="pdverdicts"></div>
+
+      <div class="plots" id="pdplots"></div>
+
+      <p class="note" style="margin-top:16px;"><strong>One regimen cannot tell you which index is driving the effect.</strong> Within a single schedule the three indices move together &mdash; raise the dose and %T&gt;MIC, AUC/MIC and C<sub>max</sub>/MIC all rise at once, so all three curves will &ldquo;fit&rdquo; equally well. Separating them is precisely what <em>dose fractionation</em> is for: hold the total daily dose constant and redistribute it across different numbers of doses per day. Only the driving index stays predictive when you do that. The marked point below is where your current schedule sits; it is a prediction to test, not a result.</p>
+
+      <div class="eq">&Delta;log&#8321;&#8320; CFU = E&#8320; &minus; E_max &middot; I<sup>H</sup> / (EI&#8325;&#8320;<sup>H</sup> + I<sup>H</sup>)</div>
+
+      <p class="note">Indices are computed from the <em>delivered</em> staircase, not the ideal curve, by trapezoid over the interval endpoints &mdash; the same arithmetic you would apply to assayed samples. AUC is integrated over one full cycle (Phase A + Phase B) and scaled to 24 h on the assumption that the regimen repeats. Because the schedule ends mid-decay, that scaling is an extrapolation; shorten it by running more half&#8209;lives.</p>
+      <p class="note">The default Hill parameters are <strong>illustrative class-typical values, not calibrated constants</strong> &mdash; real EI&#8325;&#8320; values shift with organism, strain, inoculum, growth phase, and endpoint window. Fit your own from your kill-curve data and type them in.</p>
+    </div>
+  </section>
+
   <footer>
     Fed-batch approximation of one-compartment kinetics. Assumes complete mixing within each interval, no drug binding to vessel or tubing, and no degradation. Validate against assayed concentrations before treating the nominal half&#8209;life as real.
   </footer>
@@ -389,10 +515,21 @@
 (function(){
   "use strict";
   var LN2 = Math.LN2;
-  var ids = ["n","D","V0","R","T1","T2","dt","dur"];
+  var ids = ["n","D","V0","R","T1","T2","dt","dur","Ctgt","N0","svol","scad",
+             "MIC","pdclass","E0","Emax","Hill","EI50T","EI50A","EI50C"];
   var el = {};
   ids.forEach(function(k){ el[k] = document.getElementById(k); });
   var mode = "exchange";
+
+  // Illustrative class-typical exposure-response parameters. `drive` names the
+  // index that class is conventionally driven by; null means make no claim.
+  var PDSETS = {
+    betalactam:      {drive:"T", E0:2,   Emax:5,   H:3,   T:40, A:120, C:4},
+    fluoroquinolone: {drive:"A", E0:2,   Emax:5,   H:2,   T:60, A:90,  C:8},
+    aminoglycoside:  {drive:"C", E0:2,   Emax:5,   H:2,   T:35, A:70,  C:6},
+    glycopeptide:    {drive:"A", E0:2,   Emax:4,   H:2,   T:70, A:400, C:10},
+    custom:          {drive:null}
+  };
 
   // restore per-viewer convenience
   try{
@@ -533,7 +670,13 @@
 
     return {n:n,D:D,V0:V0,R:R,f:f,T1:T1,T2:T2,dt:dt,dur:dur,q:q,ka:ka,ke:ke,
             A:A,B:B,Vpeak:Vpeak,added:delivered,maxDutyA:maxDutyA,maxDutyB:maxDutyB,
-            minT1:minT1,minT2:minT2,brokeAt:brokeAt,sustained:sustained,tEndA:tEndA,tEndB:tEndB};
+            minT1:minT1,minT2:minT2,brokeAt:brokeAt,sustained:sustained,tEndA:tEndA,tEndB:tEndB,
+            Ctgt:num("Ctgt",1e-4,8), N0:num("N0",0,6),
+            svol:num("svol",0.01,1), scad:num("scad",0.5,60),
+            MIC:num("MIC",1e-4,1), E0:num("E0",0,2), Emax:num("Emax",0.1,5),
+            H:num("Hill",0.05,3),
+            EI50T:num("EI50T",0.05,40), EI50A:num("EI50A",0.05,120), EI50C:num("EI50C",0.01,4),
+            drive:(PDSETS[el.pdclass.value]||PDSETS.custom).drive};
   }
 
   // monotonic bisection: g(T) decreasing in T, find g(T)=0
@@ -760,17 +903,356 @@
     return step*mag;
   }
 
+  // ---------- absolute concentration profile ----------
+  // Interval endpoints of the delivered staircase, in mg/L. This is deliberately
+  // the delivered curve rather than the ideal one — it is what an assay would see.
+  function profile(M){
+    var P = [[0,0]];
+    M.A.forEach(function(r){ P.push([r.t1, M.Ctgt*r.pct/100]); });
+    M.B.forEach(function(r){ P.push([M.tEndA + r.t1, M.Ctgt*r.pct/100]); });
+    return P;
+  }
+
+  function interpC(P, t){
+    if(t <= P[0][0]) return P[0][1];
+    for(var i=1;i<P.length;i++){
+      if(t <= P[i][0]){
+        var span = P[i][0]-P[i-1][0];
+        if(span <= 0) return P[i][1];
+        var w = (t-P[i-1][0])/span;
+        return P[i-1][1] + w*(P[i][1]-P[i-1][1]);
+      }
+    }
+    return P[P.length-1][1];
+  }
+
+  // ---------- PK/PD indices ----------
+  function pdIndices(M){
+    var P = M.profile, MIC = M.MIC;
+    var auc = 0, above = 0, cmax = 0, i;
+    for(i=0;i<P.length;i++) if(P[i][1] > cmax) cmax = P[i][1];
+    for(i=1;i<P.length;i++){
+      var t0=P[i-1][0], c0=P[i-1][1], t1=P[i][0], c1=P[i][1], span=t1-t0;
+      if(span <= 0) continue;
+      auc += span*(c0+c1)/2;
+      if(c0 >= MIC && c1 >= MIC){ above += span; }
+      else if(c0 < MIC && c1 < MIC){ /* never above */ }
+      else {
+        var frac = (MIC-c0)/(c1-c0);           // where the segment crosses MIC
+        above += (c1 > c0) ? span*(1-frac) : span*frac;
+      }
+    }
+    var tau = P[P.length-1][0] || 1;
+    var aucH = auc/60;                          // mg·h/L over one cycle
+    var auc24 = aucH*(1440/tau);
+    return {
+      tau:tau, cmax:cmax, aucCycle:aucH, auc24:auc24,
+      tGtAbs:above,
+      T: 100*above/tau,
+      A: auc24/MIC,
+      C: cmax/MIC
+    };
+  }
+
+  function hill(I, E0, Emax, EI50, H){
+    if(!(I > 0)) return E0;
+    var p = Math.pow(I,H);
+    return E0 - Emax*p/(Math.pow(EI50,H)+p);
+  }
+
+  // ---------- sampling schedule ----------
+  function sampling(M){
+    var tau = M.tEndA + M.tEndB;
+    var dVex = (mode === "exchange" && M.B.length) ? M.B[0].rm : 0;
+    var marks = {};
+
+    function add(t, kind){
+      if(!isFinite(t) || t < 0) return;
+      // In Phase B the withdrawal is the sample, so snap to interval boundaries.
+      if(t > M.tEndA) t = M.tEndA + Math.round((t-M.tEndA)/M.dt)*M.dt;
+      if(t > tau) t = tau;
+      t = Math.round(t*2)/2;
+      var k = t.toFixed(1);
+      if(!marks[k]) marks[k] = {t:t, cfu:false, drug:false};
+      marks[k][kind] = true;
+    }
+
+    add(0,"cfu"); add(0,"drug");
+    for(var t=M.scad; t<=tau+1e-6; t+=M.scad) add(t,"cfu");
+    add(tau,"cfu");
+    [0.5,1,2].forEach(function(m){ add(m*M.T1,"drug"); });
+    add(M.tEndA,"drug"); add(M.tEndA,"cfu");
+    [0.25,0.5,1,1.5,2,3,4,6].forEach(function(m){ add(M.tEndA+m*M.T2,"drug"); });
+
+    var list = Object.keys(marks).map(function(k){ return marks[k]; })
+                     .sort(function(a,b){ return a.t-b.t; });
+
+    // protocol volume at t, ignoring sampling loss
+    function volAt(tt){
+      if(tt <= 0) return M.V0;
+      if(tt <= M.tEndA){
+        for(var i=0;i<M.A.length;i++) if(tt <= M.A[i].t1) return M.A[i].vol;
+        return M.Vpeak;
+      }
+      if(mode === "exchange") return M.Vpeak;
+      for(var j=0;j<M.B.length;j++) if(tt <= M.tEndA+M.B[j].t1) return M.B[j].vol;
+      return M.B.length ? M.B[M.B.length-1].vol : M.Vpeak;
+    }
+
+    // CFU/mL dilution factor relative to t = 0. Withdrawal alone does not move
+    // CFU/mL; only replacement with sterile diluent does.
+    function cfuFactor(tt){
+      if(tt <= M.tEndA) return M.V0/volAt(tt);
+      if(mode === "exchange"){
+        var steps = Math.round((tt-M.tEndA)/M.dt);
+        return (M.V0/M.Vpeak)*Math.pow(1 - dVex/M.Vpeak, Math.max(0,steps));
+      }
+      return M.V0/volAt(tt);
+    }
+
+    var cum = 0, worst = 0;
+    list.forEach(function(s){
+      s.phase = s.t <= 1e-9 ? "baseline" : (s.t <= M.tEndA ? "A · rise" : "B · decay");
+      s.inB = s.t > M.tEndA;
+      s.free = s.inB && mode === "exchange" && M.svol <= dVex;
+      s.net = s.inB && mode === "exchange" ? Math.max(0, M.svol - dVex) : M.svol;
+      cum += s.net;
+      s.cum = cum;
+      s.C = interpC(M.profile, s.t);
+      s.ratio = s.C/M.MIC;
+      s.corr = -Math.log(cfuFactor(s.t))/Math.LN10;
+      if(s.corr > worst) worst = s.corr;
+    });
+
+    return {list:list, totalDrawn:list.length*M.svol, netLost:cum,
+            pctLost:100*cum/M.Vpeak, worstCorr:worst, dVex:dVex, tau:tau};
+  }
+
+  function renderSampling(M){
+    var S = M.samples;
+    document.getElementById("sampreadout").innerHTML = [
+      ["Timepoints", S.list.length, ""],
+      ["Volume drawn", fmt(S.totalDrawn,1), "mL"],
+      ["Net volume lost", fmt(S.netLost,1), "mL"],
+      ["Of peak volume", fmt(S.pctLost,1)+"%", ""],
+      ["Max CFU correction", fmt(S.worstCorr,2), "log10"],
+      ["Last sample", mins(S.tau), ""]
+    ].map(function(it){
+      return '<div class="stat"><dt>'+it[0]+'</dt><dd>'+it[1]+
+             (it[2]?'<small>'+it[2]+'</small>':'')+'</dd></div>';
+    }).join("");
+
+    var out = [];
+    if(S.pctLost > 40){
+      out.push(verdict("bad","Volume budget fails",
+        "Sampling removes <strong>"+fmt(S.netLost,1)+" mL</strong>, "+fmt(S.pctLost,0)+
+        "% of the vessel, on top of the protocol's own withdrawals. The culture will not survive the schedule. Cut the sample volume, widen the cadence, or start with a larger vessel."));
+    } else if(S.pctLost > 20){
+      out.push(verdict("warn","Volume budget tight",
+        "Net loss of <strong>"+fmt(S.netLost,1)+" mL</strong> ("+fmt(S.pctLost,0)+
+        "% of peak volume). Workable, but the late intervals are drawing on a meaningfully smaller vessel than the model assumes."));
+    } else if(S.netLost === 0){
+      out.push(verdict("ok","Sampling is free",
+        "Every "+fmt(M.svol,1)+" mL sample fits inside the <strong>"+fmt(S.dVex,2)+
+        " mL</strong> you already withdraw each interval. Sampling costs you no volume at all &mdash; take the aliquot from the withdrawal and discard the rest."));
+    } else {
+      out.push(verdict("ok","Volume budget clear",
+        "Net loss of <strong>"+fmt(S.netLost,1)+" mL</strong>, "+fmt(S.pctLost,1)+
+        "% of peak volume &mdash; well inside the noise of the model's other assumptions."));
+    }
+    if(S.worstCorr > 0.5){
+      out.push(verdict("warn","Dilution is confounding your counts",
+        "By the last timepoint, dilution alone has dropped CFU/mL by <strong>"+fmt(S.worstCorr,2)+
+        " log&#8321;&#8320;</strong>. That is not killing. Add it back before reporting, or the regimen will look "+
+        fmt(S.worstCorr,2)+" log more active than it is."));
+    }
+    document.getElementById("sampverdicts").innerHTML = out.join("");
+
+    document.querySelector("#sampTable tbody").innerHTML = S.list.map(function(s){
+      var what = s.cfu && s.drug ? "CFU + drug" : (s.cfu ? "CFU" : "drug");
+      var cls = s.cfu && s.drug ? "" : (s.cfu ? "tag-cfu" : "tag-drug");
+      return '<tr><td>'+fmt(s.t,0)+' min</td><td>'+s.phase+'</td>'+
+        '<td class="'+cls+'">'+what+'</td>'+
+        '<td>'+fmt(M.svol,2)+'</td>'+
+        '<td>'+(s.net>0?fmt(s.net,2):'free')+'</td>'+
+        '<td>'+fmt(s.cum,2)+'</td>'+
+        '<td>'+(s.C>=10?fmt(s.C,1):fmt(s.C,3))+'</td>'+
+        '<td>'+fmt(s.ratio,2)+'</td>'+
+        '<td>'+fmt(s.corr,3)+'</td></tr>';
+    }).join("");
+  }
+
+  // ---------- PD plots ----------
+  function pdPlot(o){
+    var W=340,H=252,padL=44,padR=14,padT=12,padB=46;
+    var iw=W-padL-padR, ih=H-padT-padB;
+    var yTop=o.E0+0.4, yBot=o.E0-o.Emax-0.4;
+    if(!(yBot < yTop)) yBot = yTop-1;
+    var x=function(v){ return padL+iw*Math.max(0,Math.min(1,v/o.xmax)); };
+    var y=function(v){ return padT+ih*(yTop-Math.max(yBot,Math.min(yTop,v)))/(yTop-yBot); };
+    var col = o.driver ? "var(--accent)" : "var(--ink-3)";
+
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+o.aria+'">';
+
+    // horizontal gridlines on whole log10 units
+    for(var g=Math.ceil(yBot); g<=Math.floor(yTop); g++){
+      var isZero = g===0;
+      s+='<line x1="'+padL+'" y1="'+y(g).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(g).toFixed(1)+
+         '" stroke="'+(isZero?'var(--line-strong)':'var(--line)')+'" stroke-width="1"'+
+         (isZero?' stroke-dasharray="4 3"':'')+'/>';
+      s+='<text x="'+(padL-7)+'" y="'+(y(g)+3.5).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="10">'+(g>0?'+':'')+g+'</text>';
+    }
+    if(yBot < 0 && yTop > 0){
+      s+='<text x="'+(W-padR-2)+'" y="'+(y(0)-4).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="9.5">stasis</text>';
+    }
+
+    // x ticks
+    [0,0.25,0.5,0.75,1].forEach(function(fr){
+      var v=o.xmax*fr;
+      s+='<text x="'+x(v).toFixed(1)+'" y="'+(H-padB+15)+'" text-anchor="middle" fill="var(--ink-3)" '+
+         'font-family="IBM Plex Mono, monospace" font-size="10">'+o.fmtx(v)+'</text>';
+    });
+
+    // EI50 marker
+    if(o.EI50 <= o.xmax){
+      s+='<line x1="'+x(o.EI50).toFixed(1)+'" y1="'+padT+'" x2="'+x(o.EI50).toFixed(1)+'" y2="'+(padT+ih)+
+         '" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="2 4"/>';
+    }
+
+    // response curve
+    var d='';
+    for(var i=0;i<=140;i++){
+      var xv=o.xmax*i/140;
+      d+=(i?'L':'M')+x(xv).toFixed(1)+' '+y(hill(xv,o.E0,o.Emax,o.EI50,o.H)).toFixed(1);
+    }
+    s+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.2"/>';
+
+    // current schedule
+    var off = o.cur > o.xmax;
+    var cx = x(Math.min(o.cur,o.xmax)), cy = y(o.eff);
+    s+='<line x1="'+cx.toFixed(1)+'" y1="'+cy.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y2="'+(padT+ih)+
+       '" stroke="'+col+'" stroke-width="1" stroke-dasharray="2 3" opacity="0.7"/>';
+    s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="5" fill="'+col+
+       '" stroke="var(--surface)" stroke-width="2"/>';
+    var lx = cx > padL+iw*0.62 ? cx-9 : cx+9;
+    var anch = cx > padL+iw*0.62 ? "end" : "start";
+    s+='<text x="'+lx.toFixed(1)+'" y="'+(cy-9).toFixed(1)+'" text-anchor="'+anch+'" fill="'+col+
+       '" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600">'+
+       (o.eff>0?'+':'')+fmt(o.eff,2)+(off?' ▸':'')+'</text>';
+
+    s+='<text x="'+(padL+iw/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" fill="var(--ink-3)" '+
+       'font-family="IBM Plex Mono, monospace" font-size="10.5">'+o.xlab+'</text>';
+    s+='</svg>';
+    return s;
+  }
+
+  function renderPD(M){
+    var I = M.pd;
+    var eT = hill(I.T, M.E0, M.Emax, M.EI50T, M.H);
+    var eA = hill(I.A, M.E0, M.Emax, M.EI50A, M.H);
+    var eC = hill(I.C, M.E0, M.Emax, M.EI50C, M.H);
+    var drive = M.drive;
+    var driven = drive === "T" ? eT : drive === "A" ? eA : drive === "C" ? eC : null;
+
+    document.getElementById("pdreadout").innerHTML = [
+      ["%T > MIC", fmt(I.T,0)+"%", ""],
+      ["AUC24 / MIC", fmt(I.A,0), "h"],
+      ["Cmax / MIC", fmt(I.C,1), ""],
+      ["Cmax", fmt(I.cmax,2), "mg/L"],
+      ["AUC per cycle", fmt(I.aucCycle,1), "mg·h/L"],
+      ["Predicted Δlog10", driven===null ? "—" : (driven>0?"+":"")+fmt(driven,2), ""]
+    ].map(function(it){
+      return '<div class="stat"><dt>'+it[0]+'</dt><dd>'+it[1]+
+             (it[2]?'<small>'+it[2]+'</small>':'')+'</dd></div>';
+    }).join("");
+
+    var out = [];
+    if(I.cmax < M.MIC){
+      out.push(verdict("bad","Never reaches MIC",
+        "Peak concentration is <strong>"+fmt(I.cmax,2)+" mg/L</strong> against an MIC of "+
+        fmt(M.MIC,3)+" mg/L. The culture is never exposed to an inhibitory concentration, so every index below is zero and the only prediction is unimpeded growth. Raise the target peak concentration."));
+    } else if(I.T >= 99.5){
+      out.push(verdict("warn","Concentration never falls below MIC",
+        "%T&gt;MIC is pinned at 100% because the decay never crosses the MIC within the run. The index is saturated and carries no information &mdash; extend the run past "+
+        fmt(Math.log(I.cmax/M.MIC)/LN2,1)+" half&#8209;lives to see it move."));
+    }
+    if(driven !== null){
+      var name = drive==="T" ? "%T&gt;MIC" : drive==="A" ? "AUC&#8322;&#8324;/MIC" : "C<sub>max</sub>/MIC";
+      var val  = drive==="T" ? fmt(I.T,0)+"%" : drive==="A" ? fmt(I.A,0) : fmt(I.C,1);
+      var cls = driven <= -1 ? "ok" : driven <= 0 ? "warn" : "bad";
+      var says = driven <= -1 ? "a <strong>"+fmt(-driven,2)+" log&#8321;&#8320; drop</strong> &mdash; past the 1-log threshold usually taken as meaningful killing"
+               : driven <= 0 ? "roughly <strong>net stasis</strong> ("+fmt(driven,2)+" log&#8321;&#8320;) &mdash; holding the line, not clearing"
+               : "<strong>net growth of "+fmt(driven,2)+" log&#8321;&#8320;</strong> &mdash; this exposure does not control the organism";
+      out.push(verdict(cls,"Driving index",
+        "At "+name+" = <strong>"+val+"</strong> the fitted curve predicts "+says+"."));
+    } else {
+      out.push(verdict("ok","Custom parameters",
+        "No driving index is asserted for a custom parameter set, so all three curves are drawn as equally live hypotheses. Pick the index your own dose-fractionation data supports."));
+    }
+    document.getElementById("pdverdicts").innerHTML = out.join("");
+
+    var specs = [
+      {key:"T", title:"Time above MIC", xlab:"%T > MIC", EI50:M.EI50T, cur:I.T, eff:eT,
+       xmax:100, fmtx:function(v){return Math.round(v)+"%";},
+       sub:"%T>MIC = "+fmt(I.T,0)+"%  ·  EI50 "+fmt(M.EI50T,0)+"%"},
+      {key:"A", title:"Total exposure", xlab:"AUC24 / MIC  (h)", EI50:M.EI50A, cur:I.A, eff:eA,
+       xmax:Math.max(4*M.EI50A, 1.25*I.A, 1),
+       fmtx:function(v){ return v<=0?"0":(v>=100?String(Math.round(v)):fmt(v,v<10?1:0)); },
+       sub:"AUC24/MIC = "+fmt(I.A,0)+"  ·  EI50 "+fmt(M.EI50A,0)},
+      {key:"C", title:"Peak exposure", xlab:"Cmax / MIC", EI50:M.EI50C, cur:I.C, eff:eC,
+       xmax:Math.max(4*M.EI50C, 1.25*I.C, 1),
+       fmtx:function(v){ return v<=0?"0":fmt(v,v<10?1:0); },
+       sub:"Cmax/MIC = "+fmt(I.C,1)+"  ·  EI50 "+fmt(M.EI50C,1)}
+    ];
+
+    document.getElementById("pdplots").innerHTML = specs.map(function(sp){
+      var isDrv = drive === sp.key;
+      var badge = drive === null
+        ? '<span class="badge corr">neutral</span>'
+        : (isDrv ? '<span class="badge drive">driver</span>'
+                 : '<span class="badge corr">correlated</span>');
+      return '<div class="plotcard"><h3>'+sp.title+badge+'</h3>'+
+             '<div class="sub">'+sp.sub+'</div>'+
+             pdPlot({E0:M.E0, Emax:M.Emax, H:M.H, EI50:sp.EI50, cur:sp.cur, eff:sp.eff,
+                     xmax:sp.xmax, xlab:sp.xlab, fmtx:sp.fmtx, driver:isDrv || drive===null,
+                     aria:"Change in log10 CFU versus "+sp.xlab})+
+             '</div>';
+    }).join("");
+  }
+
   function run(){
     var M = model();
+    M.profile = profile(M);
+    M.pd = pdIndices(M);
+    M.samples = sampling(M);
     renderReadout(M);
     renderVerdicts(M);
     renderCeilings(M);
     renderTables(M);
     renderChart(M);
+    renderSampling(M);
+    renderPD(M);
+    document.getElementById("rEcho").textContent = fmt(M.R,0);
     save();
   }
 
-  ids.forEach(function(k){ el[k].addEventListener("input", run); });
+  var PDFIELDS = ["E0","Emax","Hill","EI50T","EI50A","EI50C"];
+  function applyPDSet(key){
+    var s = PDSETS[key];
+    if(!s || !s.drive) return;
+    el.E0.value = s.E0; el.Emax.value = s.Emax; el.Hill.value = s.H;
+    el.EI50T.value = s.T; el.EI50A.value = s.A; el.EI50C.value = s.C;
+  }
+  PDFIELDS.forEach(function(k){
+    el[k].addEventListener("input", function(){ el.pdclass.value = "custom"; });
+  });
+  el.pdclass.addEventListener("change", function(){ applyPDSet(el.pdclass.value); run(); });
+
+  ids.forEach(function(k){
+    if(k !== "pdclass") el[k].addEventListener("input", run);
+  });
 
   var bEx = document.getElementById("modeEx"), bDil = document.getElementById("modeDil");
   function setMode(m){
