@@ -499,11 +499,21 @@
       <dl class="readout" id="pdreadout"></dl>
       <div id="pdverdicts"></div>
 
+      <div class="keyrow" style="margin-top:16px;">
+        <span>y axis: log&#8321;&#8320; CFU reduction vs control</span>
+        <span><i class="swatch" style="background:var(--accent)"></i> fitted response</span>
+        <span><i class="swatch" style="background:var(--line-strong)"></i> stasis &amp; EI&#8325;&#8320;</span>
+        <span><i class="swatch" style="background:var(--bad)"></i> &#9670; your measured result</span>
+      </div>
       <div class="plots" id="pdplots"></div>
 
-      <p class="note" style="margin-top:16px;"><strong>One regimen cannot tell you which index is driving the effect.</strong> Within a single schedule the three indices move together &mdash; raise the dose and %T&gt;MIC, AUC/MIC and C<sub>max</sub>/MIC all rise at once, so all three curves will &ldquo;fit&rdquo; equally well. Separating them is precisely what <em>dose fractionation</em> is for: hold the total daily dose constant and redistribute it across different numbers of doses per day. Only the driving index stays predictive when you do that. The marked point below is where your current schedule sits; it is a prediction to test, not a result.</p>
+      <p class="note" style="margin-top:14px;">Plotted as <strong>effect</strong> &mdash; killing attributable to drug, rising from zero to E<sub>max</sub> &mdash; which is the conventional sigmoid E<sub>max</sub> presentation. The dashed horizontal line marks <strong>stasis</strong>: below it the drug is not outrunning growth, above it you are clearing. Effect and the reported change in count are the same quantity viewed from opposite ends:</p>
 
-      <div class="eq">&Delta;log&#8321;&#8320; CFU = E&#8320; &minus; E_max &middot; I<sup>H</sup> / (EI&#8325;&#8320;<sup>H</sup> + I<sup>H</sup>)</div>
+      <div class="eq">E(I) = E_max &middot; I<sup>H</sup> / (EI&#8325;&#8320;<sup>H</sup> + I<sup>H</sup>)        &Delta;log&#8321;&#8320; CFU = E&#8320; &minus; E(I)</div>
+
+      <p class="note">The measured point uses your control arm where you have recorded one, falling back to the E&#8320; field otherwise &mdash; an observed reduction is only meaningful against something, and a measured control beats an assumed one.</p>
+
+      <p class="note" style="margin-top:16px;"><strong>One regimen cannot tell you which index is driving the effect.</strong> Within a single schedule the three indices move together &mdash; raise the dose and %T&gt;MIC, AUC/MIC and C<sub>max</sub>/MIC all rise at once, so all three curves will &ldquo;fit&rdquo; equally well. Separating them is precisely what <em>dose fractionation</em> is for: hold the total daily dose constant and redistribute it across different numbers of doses per day. Only the driving index stays predictive when you do that. The marked point is where your current schedule sits; it is a prediction to test, not a result.</p>
 
       <p class="note">Indices are computed from the <em>delivered</em> staircase, not the ideal curve, by trapezoid over the interval endpoints &mdash; the same arithmetic you would apply to assayed samples. AUC is integrated over one full cycle (Phase A + Phase B) and scaled to 24 h on the assumption that the regimen repeats. Because the schedule ends mid-decay, that scaling is an extrapolation; shorten it by running more half&#8209;lives.</p>
       <p class="note">The default Hill parameters are <strong>illustrative class-typical values, not calibrated constants</strong> &mdash; real EI&#8325;&#8320; values shift with organism, strain, inoculum, growth phase, and endpoint window. Fit your own from your kill-curve data and type them in.</p>
@@ -1145,6 +1155,13 @@
     return E0 - Emax*p/(Math.pow(EI50,H)+p);
   }
 
+  // Killing attributable to drug, rising 0 -> Emax. hill() is E0 minus this.
+  function effect(I, Emax, EI50, H){
+    if(!(I > 0)) return 0;
+    var p = Math.pow(I,H);
+    return Emax*p/(Math.pow(EI50,H)+p);
+  }
+
   // ---------- sampling schedule ----------
   function sampling(M){
     var tau = M.tEndA + M.tEndB;
@@ -1273,25 +1290,31 @@
   function pdPlot(o){
     var W=340,H=252,padL=44,padR=14,padT=12,padB=46;
     var iw=W-padL-padR, ih=H-padT-padB;
-    var yTop=o.E0+0.4, yBot=o.E0-o.Emax-0.4;
-    if(!(yBot < yTop)) yBot = yTop-1;
+    var yTop=o.Emax+0.4, yBot=-0.4;
+    // A measured result can fall outside 0..Emax; never clamp it onto the axis.
+    if(o.obs){
+      if(o.obs.y > yTop-0.2) yTop = o.obs.y+0.4;
+      if(o.obs.y < yBot+0.2) yBot = o.obs.y-0.4;
+    }
+    if(!(yBot < yTop)) yTop = yBot+1;
     var x=function(v){ return padL+iw*Math.max(0,Math.min(1,v/o.xmax)); };
     var y=function(v){ return padT+ih*(yTop-Math.max(yBot,Math.min(yTop,v)))/(yTop-yBot); };
     var col = o.driver ? "var(--accent)" : "var(--ink-3)";
 
     var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+o.aria+'">';
 
-    // horizontal gridlines on whole log10 units
+    // horizontal gridlines on whole log10 units of kill
     for(var g=Math.ceil(yBot); g<=Math.floor(yTop); g++){
-      var isZero = g===0;
       s+='<line x1="'+padL+'" y1="'+y(g).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(g).toFixed(1)+
-         '" stroke="'+(isZero?'var(--line-strong)':'var(--line)')+'" stroke-width="1"'+
-         (isZero?' stroke-dasharray="4 3"':'')+'/>';
+         '" stroke="var(--line)" stroke-width="1"/>';
       s+='<text x="'+(padL-7)+'" y="'+(y(g)+3.5).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
-         'font-family="IBM Plex Mono, monospace" font-size="10">'+(g>0?'+':'')+g+'</text>';
+         'font-family="IBM Plex Mono, monospace" font-size="10">'+g+'</text>';
     }
-    if(yBot < 0 && yTop > 0){
-      s+='<text x="'+(W-padR-2)+'" y="'+(y(0)-4).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
+    // Stasis sits at E0: below it the drug is not outrunning growth.
+    if(o.E0 > yBot && o.E0 < yTop){
+      s+='<line x1="'+padL+'" y1="'+y(o.E0).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(o.E0).toFixed(1)+
+         '" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="4 3"/>';
+      s+='<text x="'+(W-padR-2)+'" y="'+(y(o.E0)-4).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
          'font-family="IBM Plex Mono, monospace" font-size="9.5">stasis</text>';
     }
 
@@ -1312,7 +1335,7 @@
     var d='';
     for(var i=0;i<=140;i++){
       var xv=o.xmax*i/140;
-      d+=(i?'L':'M')+x(xv).toFixed(1)+' '+y(hill(xv,o.E0,o.Emax,o.EI50,o.H)).toFixed(1);
+      d+=(i?'L':'M')+x(xv).toFixed(1)+' '+y(effect(xv,o.Emax,o.EI50,o.H)).toFixed(1);
     }
     s+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.2"/>';
 
@@ -1327,7 +1350,7 @@
     var anch = cx > padL+iw*0.62 ? "end" : "start";
     s+='<text x="'+lx.toFixed(1)+'" y="'+(cy-9).toFixed(1)+'" text-anchor="'+anch+'" fill="'+col+
        '" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600">'+
-       (o.eff>0?'+':'')+fmt(o.eff,2)+(off?' ▸':'')+'</text>';
+       fmt(o.eff,2)+(off?' ▸':'')+'</text>';
 
     // measured result: index from assays, effect from dilution-corrected counts
     if(o.obs){
@@ -1338,7 +1361,7 @@
       s+='<text x="'+(ox > padL+iw*0.62 ? ox-10 : ox+10).toFixed(1)+'" y="'+(oy+15).toFixed(1)+
          '" text-anchor="'+(ox > padL+iw*0.62 ? "end" : "start")+'" fill="var(--bad)" '+
          'font-family="IBM Plex Mono, monospace" font-size="10.5" font-weight="600">obs '+
-         (o.obs.y>0?'+':'')+fmt(o.obs.y,2)+'</text>';
+         fmt(o.obs.y,2)+'</text>';
     }
 
     s+='<text x="'+(padL+iw/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" fill="var(--ink-3)" '+
@@ -1356,7 +1379,10 @@
     var driven = drive === "T" ? eT : drive === "A" ? eA : drive === "C" ? eC : null;
     var OA = M.analysis || {};
     var obsY = (OA.dEnd != null) ? OA.dEnd : null;
-    function obsPt(v){ return (obsY!=null && v!=null && isFinite(v)) ? {x:v, y:obsY} : null; }
+    // Prefer the measured control arm over the assumed E0 for the observed effect.
+    var obsBase = (OA.ctrlGrowth != null) ? OA.ctrlGrowth : M.E0;
+    var obsEff = (obsY != null) ? obsBase - obsY : null;
+    function obsPt(v){ return (obsEff!=null && v!=null && isFinite(v)) ? {x:v, y:obsEff} : null; }
 
     document.getElementById("pdreadout").innerHTML = [
       ["%T > MIC", fmt(I.T,0)+"%", ""],
@@ -1396,15 +1422,18 @@
     document.getElementById("pdverdicts").innerHTML = out.join("");
 
     var specs = [
-      {key:"T", title:"Time above MIC", xlab:"%T > MIC", EI50:M.EI50T, cur:I.T, eff:eT,
+      {key:"T", title:"Time above MIC", xlab:"%T > MIC", EI50:M.EI50T, cur:I.T,
+       eff:effect(I.T, M.Emax, M.EI50T, M.H),
        xmax:100, fmtx:function(v){return Math.round(v)+"%";}, obs:obsPt(OA.TObs),
        sub:"%T>MIC = "+fmt(I.T,0)+"%  ·  EI50 "+fmt(M.EI50T,0)+"%"},
-      {key:"A", title:"Total exposure", xlab:"AUC24 / MIC  (h)", EI50:M.EI50A, cur:I.A, eff:eA,
+      {key:"A", title:"Total exposure", xlab:"AUC24 / MIC  (h)", EI50:M.EI50A, cur:I.A,
+       eff:effect(I.A, M.Emax, M.EI50A, M.H),
        xmax:Math.max(4*M.EI50A, 1.25*I.A, 1.25*(OA.AObs||0), 1),
        fmtx:function(v){ return v<=0?"0":(v>=100?String(Math.round(v)):fmt(v,v<10?1:0)); },
        obs:obsPt(OA.AObs),
        sub:"AUC24/MIC = "+fmt(I.A,0)+"  ·  EI50 "+fmt(M.EI50A,0)},
-      {key:"C", title:"Peak exposure", xlab:"Cmax / MIC", EI50:M.EI50C, cur:I.C, eff:eC,
+      {key:"C", title:"Peak exposure", xlab:"Cmax / MIC", EI50:M.EI50C, cur:I.C,
+       eff:effect(I.C, M.Emax, M.EI50C, M.H),
        xmax:Math.max(4*M.EI50C, 1.25*I.C, 1.25*(OA.CObs||0), 1),
        fmtx:function(v){ return v<=0?"0":fmt(v,v<10?1:0); },
        obs:obsPt(OA.CObs),

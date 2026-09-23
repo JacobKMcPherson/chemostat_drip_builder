@@ -85,12 +85,18 @@ arithmetic you would apply to assayed samples:
 | `AUC₂₄/MIC` | AUC over one full cycle, scaled to 24 h on the assumption the regimen repeats |
 | `Cmax/MIC` | peak delivered concentration over MIC |
 
-Each is plotted against change in log10 CFU using a sigmoid Emax model, with the current
-schedule marked:
+Each is plotted against killing attributable to drug using a sigmoid Emax model, rising from
+zero to `Emax` — the conventional up-and-to-the-right presentation — with the current
+schedule marked and a dashed line at stasis:
 
 ```
-Δlog10 CFU = E₀ − Emax · I^H / (EI₅₀^H + I^H)
+E(I)  = Emax · I^H / (EI₅₀^H + I^H)      (plotted)
+Δlog10 CFU = E₀ − E(I)                    (reported)
 ```
+
+Effect and the reported change in count are the same quantity from opposite ends. Above the
+stasis line you are clearing; below it the drug is not outrunning growth. Where a control arm
+has been recorded, the measured point is referenced to it rather than to the assumed `E₀`.
 
 Class presets load illustrative Hill parameters and flag the index that class is normally
 driven by; editing any parameter switches to custom and drops the claim. **These defaults are
