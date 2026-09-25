@@ -623,8 +623,8 @@
     wrap.querySelectorAll("[data-conc]").forEach(function(inp){
       inp.addEventListener("input", function(){
         var v = parseFloat(inp.value);
-        conc[inp.dataset.conc] = isFinite(v) ? v : CONDMAP[inp.dataset.conc].def;
-        save(); run();
+        conc[inp.dataset.conc] = (isFinite(v) && v >= 0) ? v : CONDMAP[inp.dataset.conc].def;
+        save(); refresh();
       });
     });
   }
@@ -807,7 +807,6 @@
     var anyData = false;
     C.combos.forEach(function(combo){
       var f = fold[combo.id];
-      if(f.control != null) anyData = true;
       C.active.forEach(function(c){
         var d = f.conditions[c.key];
         if(!d) return;
