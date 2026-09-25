@@ -201,22 +201,27 @@ linearly.
 # MIC Shift Assay Builder
 
 A second page — [`mic-shift-assay.html`](mic-shift-assay.html) — for designing and recording a
-**broth microdilution MIC shift assay**: four antibiotics tested across six bacterial species,
-split into two panels of two drugs against three species each (2-for-3, 2-for-3), asking how much
-physiologic **human and mouse serum albumin**, and whole **human and mouse serum**, move each MIC
-relative to a plain cation-adjusted Mueller-Hinton broth (CAMHB) control.
+**broth microdilution MIC shift assay**: two built-in control panels (2 drugs × 3 species, twice),
+plus user-added experimental drugs/species, asking how much physiologic **human and mouse serum
+albumin**, whole **human and mouse serum**, or serum preincubation time-course conditions move each
+MIC relative to a cation-adjusted Mueller-Hinton broth (CAMHB) control.
 
 ## Assay design
 
-Each of the 4 drugs is read against its panel's 3 species by conventional two-fold broth
-microdilution, giving 12 baseline drug–species MICs. Drug and species names, and the physiologic
-concentrations below, are all editable — the defaults simply illustrate a spread of published
-protein-binding fractions (a near-zero-binding and a moderately-bound agent per panel) so the
-demo data show a range of shift sizes.
+Each of the 4 control drugs is read against its panel's 3 species by conventional two-fold broth
+microdilution, giving 12 baseline control combinations. Drug and species names remain editable, and
+you can add extra experimental drugs and species (one per line) to generate additional combinations.
+Known control-drug **fraction unbound (fu)** inputs can be stored with the run metadata and export.
 
 ## Selecting assay criteria
 
-Section 2 lets you tick or untick each additive condition and set its concentration:
+Section 2 supports two setup modes:
+
+1. **Direct additive MIC shift**: tick/untick additive conditions and set concentration.
+2. **Serum preincubation stability**: choose human/mouse serum arms, preincubation times, and
+   whether to include with-albumin and/or without-albumin preincubation conditions.
+
+Concentration defaults remain:
 
 | Condition | Default | Note |
 |---|---|---|
@@ -225,9 +230,9 @@ Section 2 lets you tick or untick each additive condition and set its concentrat
 | Human serum | 50% v/v | A readable compromise; some protocols use 90–100% |
 | Mouse serum | 50% v/v | Matched to the human-serum percentage for comparability |
 
-Unticking a condition removes its column from data entry, its bars from the figures, and its rows
-from the export — the control MIC is always recorded, since it is the denominator for every
-fold-shift calculation.
+Disabled or ungenerated conditions are omitted from data entry, figures, and export. The denominator
+for fold-shift is the measured control MIC when provided, otherwise an optional known/reference
+control MIC for that bug–drug combination.
 
 ## Real-time figures and the 4-fold rule
 
