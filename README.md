@@ -7,8 +7,8 @@ This repo hosts two static, dependency-free bench calculators served from GitHub
   fed-batch culture vessel that has no outflow. Documented below.
 - **[MIC Shift Assay Builder](mic-shift-assay.html)** — a broth microdilution MIC shift assay
   builder: four antibiotics across six bacterial species (2 drugs x 3 species, twice), testing the
-  influence of physiologic human/mouse serum albumin and human/mouse serum on MIC. Documented in
-  its own section below.
+  influence of physiologic human/mouse serum albumin and human/mouse serum on MIC, plus a real-time
+  fraction-unbound-vs-concentration explorer. Documented in its own section below.
 
 Live site: <https://jacobkmcpherson.github.io/chemostat_drip_builder/>
 
@@ -212,6 +212,30 @@ Each of the 4 control drugs is read against its panel's 3 species by conventiona
 microdilution, giving 12 baseline control combinations. Drug and species names remain editable, and
 you can add extra experimental drugs and species (one per line) to generate additional combinations.
 Known control-drug **fraction unbound (fu)** inputs can be stored with the run metadata and export.
+Give an experimental drug a known fu too by appending it to its line, e.g. `Cefiderocol, 0.42`, so
+it also appears in the fraction-unbound explorer below.
+
+## Fraction-unbound vs. concentration explorer
+
+Section 3 is a real-time, purely computational sensitivity plot (it does not depend on any
+recorded MIC): for every drug with a known fu, it models how much stays free as **drug
+concentration** and **albumin concentration** both vary, using closed-form one-site saturable
+protein binding.
+
+- **Drug concentration range (mg/L)** sets the log-scale x-axis, defaulting to the conventional
+  0.03–64 mg/L broth-microdilution span.
+- **Albumin concentrations to compare (g/L)** is a comma-separated sweep, exactly like the
+  preincubation-time list in section 2 — each value draws its own curve, letting you compare, say,
+  mouse (~25–35 g/L) against human (~35–50 g/L) albumin directly.
+- **Assumed binding-site capacity (Bmax, mg/L)** is the one free parameter: it sets where the curve
+  turns upward again as drug concentration approaches saturation. It is not a measured value —
+  adjust it to explore sensitivity.
+
+Each drug's known fu is treated as measured at trace concentration against 40 g/L human serum
+albumin (the conventional equilibrium-dialysis reference point); an apparent affinity is derived
+from that single point and used to predict fu at any other drug or albumin concentration. A
+companion table converts the predicted fu at the midpoint of the chosen range into a predicted MIC
+fold shift (`1/fu`), tying the curves directly back to the fold-shift figures in section 5.
 
 ## Selecting assay criteria
 
@@ -236,7 +260,7 @@ control MIC for that bug–drug combination.
 
 ## Real-time figures and the 4-fold rule
 
-MIC results are entered as plain mg/L values in section 3; every figure, verdict, and table
+MIC results are entered as plain mg/L values in section 4; every figure, verdict, and table
 downstream recomputes immediately, including while you type. Fold shift is
 
 ```text
