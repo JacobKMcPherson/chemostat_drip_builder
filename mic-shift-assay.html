@@ -283,19 +283,60 @@
   <section>
     <div class="sechead">
       <h2>1 &middot; Assay design &mdash; drugs &times; species</h2>
-      <p>Two control panels of two drugs against three species each (2-for-3, 2-for-3). You can also add extra experimental drugs and species; every added drug is crossed against every added species.</p>
+      <p>Two control panels of three drugs against three species each (3-for-3, 3-for-3). You can also add extra experimental drugs and species; every added drug is crossed against every added species.</p>
     </div>
     <div class="panel">
       <div class="grid3">
         <div class="panel" style="background:var(--surface-2);">
-          <div class="grouphead"><h3>Group 1</h3><span>2 drugs &times; 3 species</span></div>
+          <div class="grouphead"><h3>Group 1 &middot; Gram-negative</h3><span>3 drugs &times; 3 species</span></div>
           <div class="grid">
-            <div class="field"><label for="d1a">Drug 1A</label><input id="d1a" type="text" value="Meropenem"></div>
-            <div class="field"><label for="d1b">Drug 1B</label><input id="d1b" type="text" value="Ciprofloxacin"></div>
+            <div class="field"><label for="d1a">Drug 1A</label>
+              <select id="d1a">
+                <option value="Meropenem" data-fu="0.98" selected>Meropenem</option>
+                <option value="Cefepime" data-fu="0.80">Cefepime</option>
+                <option value="Gentamicin" data-fu="0.03">Gentamicin</option>
+                <option value="Ciprofloxacin" data-fu="0.70">Ciprofloxacin</option>
+                <option value="Piperacillin-tazobactam" data-fu="0.70">Piperacillin-tazobactam</option>
+                <option value="Ceftazidime" data-fu="0.90">Ceftazidime</option>
+                <option value="Aztreonam" data-fu="0.44">Aztreonam</option>
+                <option value="Amikacin" data-fu="0.95">Amikacin</option>
+                <option value="Colistin" data-fu="0.50">Colistin</option>
+                <option value="Ertapenem" data-fu="0.15">Ertapenem</option>
+              </select>
+            </div>
+            <div class="field"><label for="d1b">Drug 1B</label>
+              <select id="d1b">
+                <option value="Meropenem" data-fu="0.98">Meropenem</option>
+                <option value="Cefepime" data-fu="0.80" selected>Cefepime</option>
+                <option value="Gentamicin" data-fu="0.03">Gentamicin</option>
+                <option value="Ciprofloxacin" data-fu="0.70">Ciprofloxacin</option>
+                <option value="Piperacillin-tazobactam" data-fu="0.70">Piperacillin-tazobactam</option>
+                <option value="Ceftazidime" data-fu="0.90">Ceftazidime</option>
+                <option value="Aztreonam" data-fu="0.44">Aztreonam</option>
+                <option value="Amikacin" data-fu="0.95">Amikacin</option>
+                <option value="Colistin" data-fu="0.50">Colistin</option>
+                <option value="Ertapenem" data-fu="0.15">Ertapenem</option>
+              </select>
+            </div>
+            <div class="field"><label for="d1c">Drug 1C</label>
+              <select id="d1c">
+                <option value="Meropenem" data-fu="0.98">Meropenem</option>
+                <option value="Cefepime" data-fu="0.80">Cefepime</option>
+                <option value="Gentamicin" data-fu="0.03" selected>Gentamicin</option>
+                <option value="Ciprofloxacin" data-fu="0.70">Ciprofloxacin</option>
+                <option value="Piperacillin-tazobactam" data-fu="0.70">Piperacillin-tazobactam</option>
+                <option value="Ceftazidime" data-fu="0.90">Ceftazidime</option>
+                <option value="Aztreonam" data-fu="0.44">Aztreonam</option>
+                <option value="Amikacin" data-fu="0.95">Amikacin</option>
+                <option value="Colistin" data-fu="0.50">Colistin</option>
+                <option value="Ertapenem" data-fu="0.15">Ertapenem</option>
+              </select>
+            </div>
           </div>
           <div class="grid" style="margin-top:8px;">
             <div class="field"><label for="fu1a">Known fraction unbound (fu), Drug 1A</label><input id="fu1a" type="number" min="0" max="1" step="0.01" value="0.98"></div>
-            <div class="field"><label for="fu1b">Known fraction unbound (fu), Drug 1B</label><input id="fu1b" type="number" min="0" max="1" step="0.01" value="0.70"></div>
+            <div class="field"><label for="fu1b">Known fraction unbound (fu), Drug 1B</label><input id="fu1b" type="number" min="0" max="1" step="0.01" value="0.80"></div>
+            <div class="field"><label for="fu1c">Known fraction unbound (fu), Drug 1C</label><input id="fu1c" type="number" min="0" max="1" step="0.01" value="0.03"></div>
           </div>
           <div class="grid" style="margin-top:12px;">
             <div class="field"><label for="s1a">Species 1a</label><input id="s1a" type="text" value="Escherichia coli"></div>
@@ -304,14 +345,49 @@
           </div>
         </div>
         <div class="panel" style="background:var(--surface-2);">
-          <div class="grouphead"><h3>Group 2</h3><span>2 drugs &times; 3 species</span></div>
+          <div class="grouphead"><h3>Group 2 &middot; Gram-positive</h3><span>3 drugs &times; 3 species</span></div>
           <div class="grid">
-            <div class="field"><label for="d2a">Drug 2A</label><input id="d2a" type="text" value="Vancomycin"></div>
-            <div class="field"><label for="d2b">Drug 2B</label><input id="d2b" type="text" value="Daptomycin"></div>
+            <div class="field"><label for="d2a">Drug 2A</label>
+              <select id="d2a">
+                <option value="Vancomycin" data-fu="0.50" selected>Vancomycin</option>
+                <option value="Daptomycin" data-fu="0.08">Daptomycin</option>
+                <option value="Linezolid" data-fu="0.90">Linezolid</option>
+                <option value="Nafcillin" data-fu="0.10">Nafcillin</option>
+                <option value="Ceftaroline" data-fu="0.80">Ceftaroline</option>
+                <option value="Clindamycin" data-fu="0.10">Clindamycin</option>
+                <option value="Doxycycline" data-fu="0.10">Doxycycline</option>
+                <option value="Rifampin" data-fu="0.20">Rifampin</option>
+              </select>
+            </div>
+            <div class="field"><label for="d2b">Drug 2B</label>
+              <select id="d2b">
+                <option value="Vancomycin" data-fu="0.50">Vancomycin</option>
+                <option value="Daptomycin" data-fu="0.08" selected>Daptomycin</option>
+                <option value="Linezolid" data-fu="0.90">Linezolid</option>
+                <option value="Nafcillin" data-fu="0.10">Nafcillin</option>
+                <option value="Ceftaroline" data-fu="0.80">Ceftaroline</option>
+                <option value="Clindamycin" data-fu="0.10">Clindamycin</option>
+                <option value="Doxycycline" data-fu="0.10">Doxycycline</option>
+                <option value="Rifampin" data-fu="0.20">Rifampin</option>
+              </select>
+            </div>
+            <div class="field"><label for="d2c">Drug 2C</label>
+              <select id="d2c">
+                <option value="Vancomycin" data-fu="0.50">Vancomycin</option>
+                <option value="Daptomycin" data-fu="0.08">Daptomycin</option>
+                <option value="Linezolid" data-fu="0.90" selected>Linezolid</option>
+                <option value="Nafcillin" data-fu="0.10">Nafcillin</option>
+                <option value="Ceftaroline" data-fu="0.80">Ceftaroline</option>
+                <option value="Clindamycin" data-fu="0.10">Clindamycin</option>
+                <option value="Doxycycline" data-fu="0.10">Doxycycline</option>
+                <option value="Rifampin" data-fu="0.20">Rifampin</option>
+              </select>
+            </div>
           </div>
           <div class="grid" style="margin-top:8px;">
             <div class="field"><label for="fu2a">Known fraction unbound (fu), Drug 2A</label><input id="fu2a" type="number" min="0" max="1" step="0.01" value="0.50"></div>
             <div class="field"><label for="fu2b">Known fraction unbound (fu), Drug 2B</label><input id="fu2b" type="number" min="0" max="1" step="0.01" value="0.08"></div>
+            <div class="field"><label for="fu2c">Known fraction unbound (fu), Drug 2C</label><input id="fu2c" type="number" min="0" max="1" step="0.01" value="0.90"></div>
           </div>
           <div class="grid" style="margin-top:12px;">
             <div class="field"><label for="s2a">Species 2a</label><input id="s2a" type="text" value="Staphylococcus aureus"></div>
@@ -320,8 +396,8 @@
           </div>
         </div>
         <div class="panel" style="background:var(--surface-2);">
-          <div class="grouphead"><h3>Panel summary</h3><span id="comboCount">12 combinations</span></div>
-          <p class="note">Each of the 4 drugs is tested against its group's 3 species, always as a broth microdilution doubling-dilution series, giving 12 baseline drug&ndash;species MICs before any serum or albumin is added.</p>
+          <div class="grouphead"><h3>Panel summary</h3><span id="comboCount">18 combinations</span></div>
+          <p class="note">Each of the 6 drugs is tested against its group's 3 species, always as a broth microdilution doubling-dilution series, giving 18 baseline drug&ndash;species MICs before any serum or albumin is added.</p>
           <div class="field" style="margin-top:10px;">
             <label for="expDrugs">Additional experimental drugs (one per line, optional ", fu")</label>
             <textarea id="expDrugs" placeholder="e.g.&#10;Cefiderocol, 0.42&#10;Linezolid"></textarea>
@@ -330,7 +406,7 @@
             <label for="expSpecies">Additional experimental species / strains (one per line)</label>
             <textarea id="expSpecies" placeholder="e.g.&#10;Acinetobacter baumannii ATCC 17978&#10;Escherichia coli NCTC 13400"></textarea>
           </div>
-          <p class="note">Defaults pair two low/high protein-binding Gram-negative agents with Gram-negatives, and two low/high protein-binding Gram-positive agents with Gram-positives &mdash; a spread deliberately chosen to illustrate that protein binding, not spectrum, drives the size of the shift. Give an experimental drug a known fu (e.g. <code>Cefiderocol, 0.42</code>) to include it in the fraction-unbound explorer below.</p>
+          <p class="note">Defaults pair three low/mid/high protein-binding Gram-negative agents with Gram-negatives, and three low/mid/high protein-binding Gram-positive agents with Gram-positives &mdash; a spread deliberately chosen to illustrate that protein binding, not spectrum, drives the size of the shift. Each drug dropdown carries its own literature-typical fu, auto-filled into the field below it (still editable). Give an experimental drug a known fu (e.g. <code>Cefiderocol, 0.42</code>) to include it in the fraction-unbound explorer below.</p>
         </div>
       </div>
     </div>
@@ -523,8 +599,8 @@
   var SITE = "https://jacobkmcpherson.github.io/chemostat_drip_builder/mic-shift-assay.html";
   var REPO = "https://github.com/JacobKMcPherson/chemostat_drip_builder";
 
-  var NAME_IDS = ["d1a","d1b","d2a","d2b","s1a","s1b","s1c","s2a","s2b","s2c",
-    "fu1a","fu1b","fu2a","fu2b","expDrugs","expSpecies","setupMode","preTimes",
+  var NAME_IDS = ["d1a","d1b","d1c","d2a","d2b","d2c","s1a","s1b","s1c","s2a","s2b","s2c",
+    "fu1a","fu1b","fu1c","fu2a","fu2b","fu2c","expDrugs","expSpecies","setupMode","preTimes",
     "hAlbumin","hStability","feMin","feMax","feBmax","feAlbList"
   ];
   var METAIDS = ["mTitle","mAuthor","mOrcid","mOrg","mMedium","mInoculum","mIncub","mRun","mDesc","hAlbumin","hStability"];
@@ -544,19 +620,33 @@
   var CONDMAP = {}; CONDITIONS.forEach(function(c){ CONDMAP[c.key] = c; });
 
   var GROUPS = [
-    {id:"1", drugSlots:["a","b"], speciesSlots:["a","b","c"]},
-    {id:"2", drugSlots:["a","b"], speciesSlots:["a","b","c"]}
+    {id:"1", drugSlots:["a","b","c"], speciesSlots:["a","b","c"]},
+    {id:"2", drugSlots:["a","b","c"], speciesSlots:["a","b","c"]}
   ];
 
   var DEMO = {
     // illustrative fold multipliers versus control MIC, roughly tracking published
-    // protein-binding fractions (meropenem ~2%, ciprofloxacin ~30%, vancomycin ~50%,
-    // daptomycin ~90-95%) -- for demoing the pipeline only, not measured data.
+    // protein-binding fractions (meropenem ~2%, cefepime ~20%, gentamicin ~97%,
+    // vancomycin ~50%, daptomycin ~90-95%, linezolid ~10%) -- for demoing the
+    // pipeline only, not measured data.
     "1a": {control:0.25, hsa:1.0,  msa:1.0,  hserum:1.0,  mserum:1.0},
-    "1b": {control:0.06, hsa:1.5,  msa:1.4,  hserum:1.5,  mserum:1.3},
+    "1b": {control:2,    hsa:1.4,  msa:1.3,  hserum:1.4,  mserum:1.2},
+    "1c": {control:1,    hsa:1.05, msa:1.05, hserum:1.05, mserum:1.05},
     "2a": {control:1,    hsa:2,    msa:1.8,  hserum:2,    mserum:1.7},
-    "2b": {control:0.5,  hsa:8,    msa:6,    hserum:8,    mserum:6}
+    "2b": {control:0.5,  hsa:8,    msa:6,    hserum:8,    mserum:6},
+    "2c": {control:2,    hsa:1.2,  msa:1.15, hserum:1.2,  mserum:1.1}
   };
+
+  // Curated dropdown drug options with literature-typical fu, keyed by select id,
+  // used to auto-fill the paired "known fu" field when a user picks a new drug.
+  var DRUG_FU = {
+    Meropenem:0.98, Cefepime:0.80, Gentamicin:0.03, Ciprofloxacin:0.70,
+    "Piperacillin-tazobactam":0.70, Ceftazidime:0.90, Aztreonam:0.44,
+    Amikacin:0.95, Colistin:0.50, Ertapenem:0.15,
+    Vancomycin:0.50, Daptomycin:0.08, Linezolid:0.90, Nafcillin:0.10,
+    Ceftaroline:0.80, Clindamycin:0.10, Doxycycline:0.10, Rifampin:0.20
+  };
+
 
   var obs = {};       // obs[comboId][condKey] = mg/L
   var enabled = {};   // enabled[condKey] = bool
@@ -858,7 +948,7 @@
       }
     }catch(e){}
     CONDITIONS.forEach(function(c){
-      if(!(c.key in enabled)) enabled[c.key] = true;
+      if(!(c.key in enabled)) enabled[c.key] = false;
       if(!(c.key in conc) || !isFinite(conc[c.key])) conc[c.key] = c.def;
     });
     try{
@@ -1350,8 +1440,10 @@
         control_drug_fu: {
           "1a": num01(el.fu1a.value),
           "1b": num01(el.fu1b.value),
+          "1c": num01(el.fu1c.value),
           "2a": num01(el.fu2a.value),
-          "2b": num01(el.fu2b.value)
+          "2b": num01(el.fu2b.value),
+          "2c": num01(el.fu2c.value)
         },
         hypotheses: {
           albumin_binding_fu: (m.hAlbumin||"") || null,
@@ -1443,8 +1535,10 @@
     L.push("Known control-drug fu entries:");
     L.push("- Drug 1A: "+(num01(el.fu1a.value)==null?"not set":fmt(num01(el.fu1a.value),3)));
     L.push("- Drug 1B: "+(num01(el.fu1b.value)==null?"not set":fmt(num01(el.fu1b.value),3)));
+    L.push("- Drug 1C: "+(num01(el.fu1c.value)==null?"not set":fmt(num01(el.fu1c.value),3)));
     L.push("- Drug 2A: "+(num01(el.fu2a.value)==null?"not set":fmt(num01(el.fu2a.value),3)));
     L.push("- Drug 2B: "+(num01(el.fu2b.value)==null?"not set":fmt(num01(el.fu2b.value),3)));
+    L.push("- Drug 2C: "+(num01(el.fu2c.value)==null?"not set":fmt(num01(el.fu2c.value),3)));
     L.push("");
     if(m.hAlbumin || m.hStability){
       L.push("Hypotheses:");
@@ -1668,10 +1762,19 @@
     CUR = {C:C, fold:fold, specs:specs};
   }
 
-  ["d1a","d1b","d2a","d2b","s1a","s1b","s1c","s2a","s2b","s2c",
-   "expDrugs","expSpecies","fu1a","fu1b","fu2a","fu2b","setupMode","preTimes"
+  ["d1a","d1b","d1c","d2a","d2b","d2c","s1a","s1b","s1c","s2a","s2b","s2c",
+   "expDrugs","expSpecies","fu1a","fu1b","fu1c","fu2a","fu2b","fu2c","setupMode","preTimes"
   ].forEach(function(k){
     el[k].addEventListener("input", run);
+  });
+  ["d1a","d1b","d1c","d2a","d2b","d2c"].forEach(function(k){
+    el[k].addEventListener("change", function(){
+      var opt = el[k].options[el[k].selectedIndex];
+      var fu = opt ? parseFloat(opt.getAttribute("data-fu")) : NaN;
+      if(!isFinite(fu)) fu = DRUG_FU[el[k].value];
+      if(isFinite(fu)) el["fu"+k.slice(1)].value = fu;
+      save(); run();
+    });
   });
   el.setupMode.addEventListener("change", run);
   ["feMin","feMax","feBmax","feAlbList"].forEach(function(k){
