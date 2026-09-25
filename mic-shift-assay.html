@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Broth microdilution MIC shift assay builder with configurable drugs/species, serum and albumin conditions, optional serum preincubation time-course, real-time figures, and downloadable FAIR data package.">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  body{margin:0;font-family:system-ui,sans-serif;background:#eef1f0;}
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+</style>
+<title>MIC Shift Assay Builder</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#eef1f0;
+    --surface:#ffffff;
+    --surface-2:#f6f8f7;
+    --line:#d3dbd9;
+    --line-strong:#b3bfbc;
+    --ink:#141d21;
+    --ink-2:#48585d;
+    --ink-3:#74858a;
+    --accent:#0d6f78;
+    --accent-soft:#d9ecee;
+    --warn:#9a5a06;
+    --warn-soft:#f8ecd9;
+    --bad:#9e2437;
+    --bad-soft:#f8e2e5;
+    --good:#2f6b3a;
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0c1214;
+      --surface:#141d21;
+      --surface-2:#1a252a;
+      --line:#27353a;
+      --line-strong:#3b4d53;
+      --ink:#e4ecea;
+      --ink-2:#a6b6b8;
+      --ink-3:#7c8d90;
+      --accent:#4cc0c9;
+      --accent-soft:#12383c;
+      --warn:#e2a049;
+      --warn-soft:#3a2c14;
+      --bad:#e88293;
+      --bad-soft:#3a1b21;
+      --good:#7dc08a;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0c1214;
+    --surface:#141d21;
+    --surface-2:#1a252a;
+    --line:#27353a;
+    --line-strong:#3b4d53;
+    --ink:#e4ecea;
+    --ink-2:#a6b6b8;
+    --ink-3:#7c8d90;
+    --accent:#4cc0c9;
+    --accent-soft:#12383c;
+    --warn:#e2a049;
+    --warn-soft:#3a2c14;
+    --bad:#e88293;
+    --bad-soft:#3a1b21;
+    --good:#7dc08a;
+  }
+
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"Archivo", ui-sans-serif, system-ui, sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;}
+  h1,h2,h3{text-wrap:balance;margin:0;}
+  .eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  h1{font-size:clamp(26px,5vw,38px);font-weight:700;letter-spacing:-.02em;margin-top:6px;}
+  .lede{color:var(--ink-2);max-width:66ch;margin-top:10px;}
+  .lede code{font-family:"IBM Plex Mono",monospace;font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
+
+  .sitenav{display:flex;flex-wrap:wrap;gap:8px 16px;font-family:"IBM Plex Mono",monospace;font-size:12px;}
+  .sitenav a{color:var(--ink-3);text-decoration:none;border-bottom:1px solid transparent;}
+  .sitenav a:hover{color:var(--accent);border-color:var(--accent);}
+  .sitenav a[aria-current="page"]{color:var(--accent);border-color:var(--accent);}
+
+  section{margin-top:34px;}
+  h2{font-size:19px;font-weight:600;letter-spacing:-.01em;}
+  .sechead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:12px;}
+  .sechead p{margin:0;color:var(--ink-3);font-size:13px;}
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .panel + .panel{margin-top:14px;}
+
+  /* ---- inputs ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media (max-width:760px){ .grid3{grid-template-columns:1fr;} }
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:12px;color:var(--ink-2);font-weight:500;}
+  .field .unit{color:var(--ink-3);font-weight:400;}
+  .field input,.field select,.field textarea{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:15px;font-weight:500;
+    background:var(--surface-2);
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:8px 9px;
+    width:100%;
+    min-width:0;
+  }
+  .field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible,button:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+  .field textarea{min-height:88px;resize:vertical;}
+  .hint{font-size:11.5px;color:var(--ink-3);line-height:1.35;}
+
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;
+    background:transparent;color:var(--ink-2);
+    border:1px solid var(--line);border-radius:999px;
+    padding:3px 10px;cursor:pointer;
+  }
+  .presets button:hover{border-color:var(--accent);color:var(--accent);}
+
+  .grouphead{
+    display:flex;align-items:baseline;gap:9px;margin-bottom:10px;flex-wrap:wrap;
+  }
+  .grouphead h3{font-size:14px;font-weight:600;}
+  .grouphead span{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);}
+
+  .condcard{
+    border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);
+    padding:13px 14px;display:flex;flex-direction:column;gap:9px;
+  }
+  .condcard .chead{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .condcard .chead label{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .condcard input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent);}
+  .condcard .swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
+
+  /* ---- readout ---- */
+  .readout{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-top:14px;}
+  @media (max-width:620px){ .readout{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:380px){ .readout{grid-template-columns:1fr;} }
+  .stat{background:var(--surface);padding:13px 14px;}
+  .stat dt{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;}
+  .stat dd{margin:4px 0 0;font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+  .stat dd small{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:3px;}
+
+  .verdict{
+    display:flex;gap:11px;align-items:flex-start;
+    border-radius:var(--radius);padding:13px 15px;margin-top:10px;
+    font-size:14px;line-height:1.45;
+    border:1px solid transparent;
+  }
+  .verdict .tag{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+    letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
+    padding-top:2px;
+  }
+  .verdict p{margin:0;}
+  .verdict:first-child{margin-top:0;}
+  .v-ok{background:var(--surface);border-color:var(--line);}
+  .v-ok .tag{color:var(--good);}
+  .v-warn{background:var(--warn-soft);border-color:var(--warn);}
+  .v-warn .tag{color:var(--warn);}
+  .v-bad{background:var(--bad-soft);border-color:var(--bad);}
+  .v-bad .tag{color:var(--bad);}
+
+  /* ---- chart ---- */
+  figure{margin:0;}
+  figcaption{font-size:12.5px;color:var(--ink-3);margin-top:9px;}
+  .chartbox{width:100%;}
+  svg{display:block;width:100%;height:auto;max-width:100%;}
+  .keyrow{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--ink-2);margin-bottom:10px;font-family:"IBM Plex Mono",monospace;}
+  .keyrow span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:16px;height:3px;border-radius:2px;display:inline-block;}
+
+  /* ---- pd-style plots ---- */
+  .plots{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px;}
+  .plotcard{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);padding:11px 11px 6px;}
+  .plotcard h3{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .plotcard .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);margin-top:3px;}
+
+  /* ---- tables ---- */
+  .tablewrap{overflow-x:auto;max-height:460px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);}
+  table{border-collapse:collapse;width:100%;font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;}
+  thead th{
+    position:sticky;top:0;z-index:1;
+    background:var(--surface-2);
+    text-align:right;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-2);
+    padding:9px 11px;border-bottom:1px solid var(--line-strong);white-space:nowrap;
+  }
+  thead th:first-child,thead th:nth-child(2),thead th:nth-child(3){text-align:left;}
+  tbody td{padding:7px 11px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td:first-child,tbody td:nth-child(2),tbody td:nth-child(3){text-align:left;color:var(--ink-2);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.grouprow td{background:var(--surface-2);color:var(--ink-2);font-weight:600;}
+  td.shift-hi{color:var(--bad);font-weight:600;}
+  td.shift-lo{color:var(--good);font-weight:600;}
+  tbody td input{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+    background:var(--surface-2);color:var(--ink);
+    border:1px solid var(--line);border-radius:5px;
+    padding:4px 6px;width:82px;text-align:right;
+  }
+  tbody td input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  tbody td input.filled{border-color:var(--accent);}
+
+  .note{font-size:13px;color:var(--ink-2);line-height:1.55;max-width:74ch;}
+  .note strong{color:var(--ink);font-weight:600;}
+  .note + .note{margin-top:9px;}
+  ol.steps{margin:0;padding-left:20px;font-size:13.5px;color:var(--ink-2);line-height:1.6;}
+  ol.steps li{margin-bottom:7px;}
+  ol.steps li::marker{color:var(--accent);font-family:"IBM Plex Mono",monospace;font-weight:600;}
+  ol.steps strong{color:var(--ink);font-weight:600;}
+  kbd{font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+
+  .eq{
+    font-family:"IBM Plex Mono",monospace;font-size:13px;
+    background:var(--surface-2);border-left:3px solid var(--accent);
+    padding:10px 13px;border-radius:0 7px 7px 0;margin:11px 0;
+    overflow-x:auto;color:var(--ink);
+  }
+
+  .figtab{margin-bottom:22px;}
+  .figtab:last-child{margin-bottom:0;}
+  .figtab .caption{display:flex;flex-wrap:wrap;align-items:baseline;gap:9px;margin-bottom:9px;}
+  .figtab .caption h3{font-size:13.5px;font-weight:600;}
+  .figtab .caption p{margin:0;font-size:12px;color:var(--ink-3);flex:1 1 200px;}
+  .copybtn{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;
+    background:transparent;color:var(--ink-2);
+    border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap;
+  }
+  .copybtn:hover{border-color:var(--accent);color:var(--accent);}
+  .statusmsg{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;margin-top:10px;
+    color:var(--good);
+  }
+  .statusmsg.err{color:var(--bad);}
+
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3);}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <nav class="sitenav" aria-label="Site">
+    <a href="index.html">Drip Schedule Builder</a>
+    <a href="mic-shift-assay.html" aria-current="page">MIC Shift Assay Builder</a>
+  </nav>
+
+  <header>
+    <div class="eyebrow">Broth microdilution &middot; protein-binding &amp; serum effect</div>
+    <h1>MIC Shift Assay Builder</h1>
+    <p class="lede">Design a broth microdilution MIC shift panel from two built-in control groups plus any additional experimental drugs/species, then test how physiologic human and mouse serum albumin and serum shift each MIC. You can also switch to serum preincubation stability mode with custom incubation times (with or without albumin), set hypotheses, watch figures update in real time, and export everything as a FAIR data package.</p>
+  </header>
+
+  <section>
+    <div class="sechead">
+      <h2>1 &middot; Assay design &mdash; drugs &times; species</h2>
+      <p>Two control panels of two drugs against three species each (2-for-3, 2-for-3). You can also add extra experimental drugs and species; every added drug is crossed against every added species.</p>
+    </div>
+    <div class="panel">
+      <div class="grid3">
+        <div class="panel" style="background:var(--surface-2);">
+          <div class="grouphead"><h3>Group 1</h3><span>2 drugs &times; 3 species</span></div>
+          <div class="grid">
+            <div class="field"><label for="d1a">Drug 1A</label><input id="d1a" type="text" value="Meropenem"></div>
+            <div class="field"><label for="d1b">Drug 1B</label><input id="d1b" type="text" value="Ciprofloxacin"></div>
+          </div>
+          <div class="grid" style="margin-top:8px;">
+            <div class="field"><label for="fu1a">Known fraction unbound (fu), Drug 1A</label><input id="fu1a" type="number" min="0" max="1" step="0.01" value="0.98"></div>
+            <div class="field"><label for="fu1b">Known fraction unbound (fu), Drug 1B</label><input id="fu1b" type="number" min="0" max="1" step="0.01" value="0.70"></div>
+          </div>
+          <div class="grid" style="margin-top:12px;">
+            <div class="field"><label for="s1a">Species 1a</label><input id="s1a" type="text" value="Escherichia coli"></div>
+            <div class="field"><label for="s1b">Species 1b</label><input id="s1b" type="text" value="Klebsiella pneumoniae"></div>
+            <div class="field"><label for="s1c">Species 1c</label><input id="s1c" type="text" value="Pseudomonas aeruginosa"></div>
+          </div>
+        </div>
+        <div class="panel" style="background:var(--surface-2);">
+          <div class="grouphead"><h3>Group 2</h3><span>2 drugs &times; 3 species</span></div>
+          <div class="grid">
+            <div class="field"><label for="d2a">Drug 2A</label><input id="d2a" type="text" value="Vancomycin"></div>
+            <div class="field"><label for="d2b">Drug 2B</label><input id="d2b" type="text" value="Daptomycin"></div>
+          </div>
+          <div class="grid" style="margin-top:8px;">
+            <div class="field"><label for="fu2a">Known fraction unbound (fu), Drug 2A</label><input id="fu2a" type="number" min="0" max="1" step="0.01" value="0.50"></div>
+            <div class="field"><label for="fu2b">Known fraction unbound (fu), Drug 2B</label><input id="fu2b" type="number" min="0" max="1" step="0.01" value="0.08"></div>
+          </div>
+          <div class="grid" style="margin-top:12px;">
+            <div class="field"><label for="s2a">Species 2a</label><input id="s2a" type="text" value="Staphylococcus aureus"></div>
+            <div class="field"><label for="s2b">Species 2b</label><input id="s2b" type="text" value="Enterococcus faecalis"></div>
+            <div class="field"><label for="s2c">Species 2c</label><input id="s2c" type="text" value="Streptococcus pneumoniae"></div>
+          </div>
+        </div>
+        <div class="panel" style="background:var(--surface-2);">
+          <div class="grouphead"><h3>Panel summary</h3><span id="comboCount">12 combinations</span></div>
+          <p class="note">Each of the 4 drugs is tested against its group's 3 species, always as a broth microdilution doubling-dilution series, giving 12 baseline drug&ndash;species MICs before any serum or albumin is added.</p>
+          <div class="field" style="margin-top:10px;">
+            <label for="expDrugs">Additional experimental drugs (one per line)</label>
+            <textarea id="expDrugs" placeholder="e.g.\nCefiderocol\nLinezolid"></textarea>
+          </div>
+          <div class="field" style="margin-top:10px;">
+            <label for="expSpecies">Additional experimental species / strains (one per line)</label>
+            <textarea id="expSpecies" placeholder="e.g.\nAcinetobacter baumannii ATCC 17978\nEscherichia coli NCTC 13400"></textarea>
+          </div>
+          <p class="note">Defaults pair two low/high protein-binding Gram-negative agents with Gram-negatives, and two low/high protein-binding Gram-positive agents with Gram-positives &mdash; a spread deliberately chosen to illustrate that protein binding, not spectrum, drives the size of the shift.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>2 &middot; Select assay criteria &mdash; serum &amp; albumin conditions</h2>
+      <p>Choose direct additive MIC-shift mode or serum preincubation stability mode. Concentrations and setup settings are editable per run.</p>
+    </div>
+    <div class="panel">
+      <div class="grid">
+        <div class="field">
+          <label for="setupMode">Experimental setup mode</label>
+          <select id="setupMode">
+            <option value="additive">Direct additive MIC shift (albumin/serum in assay wells)</option>
+            <option value="preincubation">Serum preincubation stability (incubate drug before MIC test)</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel" id="preincubOpts" style="background:var(--surface-2);margin-top:12px;" hidden>
+        <div class="grouphead"><h3>Preincubation settings</h3><span>serum stability mode</span></div>
+        <div class="grid">
+          <div class="field"><label for="preTimes">Preincubation times (hours, comma separated)</label><input id="preTimes" type="text" value="0, 1, 2, 4, 8"></div>
+          <div class="field"><label>&nbsp;</label><label><input id="preHuman" type="checkbox" checked style="width:auto;margin-right:6px;">Include human serum preincubation arms</label></div>
+          <div class="field"><label>&nbsp;</label><label><input id="preMouse" type="checkbox" checked style="width:auto;margin-right:6px;">Include mouse serum preincubation arms</label></div>
+          <div class="field"><label>&nbsp;</label><label><input id="preWithoutAlbumin" type="checkbox" checked style="width:auto;margin-right:6px;">Include preincubation without albumin</label></div>
+          <div class="field"><label>&nbsp;</label><label><input id="preWithAlbumin" type="checkbox" style="width:auto;margin-right:6px;">Include preincubation with albumin</label></div>
+        </div>
+      </div>
+      <div class="grid" id="condGrid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));"></div>
+      <p class="note" style="margin-top:13px;">The <strong>control</strong> MIC (cation-adjusted Mueller-Hinton broth, no additive) is always recorded and is the denominator for every fold-shift below. Physiologic human serum albumin runs ~35&ndash;50 g/L; mouse serum albumin is somewhat lower, commonly cited near 25&ndash;35 g/L. Whole-serum supplementation is conventionally run at 50% v/v as a readable compromise, or up to 90&ndash;100% v/v to approximate fully bound in vivo conditions &mdash; edit the percentage to match your protocol.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>3 &middot; Record broth microdilution MIC results</h2>
+      <p>One row per drug&ndash;species combination. Enter known control MIC (optional) and measured MIC in mg/L (equivalent to &micro;g/mL); leave a cell blank if that condition was not assayed.</p>
+    </div>
+    <div class="panel">
+      <div class="tablewrap">
+        <table id="entryTable">
+          <thead><tr id="entryHead"></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="presets" style="margin-top:12px;gap:8px;">
+        <button type="button" id="demoFill">Fill with simulated demo values</button>
+        <button type="button" id="clearObs">Clear all recorded data</button>
+      </div>
+      <div id="obsStatus"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>4 &middot; Real-time fold-shift figures</h2>
+      <p>MIC of each additive condition divided by the control MIC, plotted as log&#8322; fold. Bars above the dashed line at +2 represent a &ge;4-fold rise (reduced apparent potency); below &minus;2 is a &ge;4-fold fall.</p>
+    </div>
+    <div class="panel">
+      <div class="keyrow" id="chartKey"></div>
+      <div class="plots" id="drugCharts"></div>
+      <p class="note" style="margin-top:14px;"><strong>Why &plusmn;4-fold?</strong> Broth microdilution reads out on a doubling-dilution series, so a single well of assay noise is already a 2-fold difference. A shift has to clear two doubling dilutions (4-fold) before it is distinguishable from ordinary well-to-well variability &mdash; that is the conventional bar for calling a real MIC shift rather than noise.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>5 &middot; Shift verdicts</h2>
+      <p>Flags every recorded condition that clears the &ge;4-fold bar.</p>
+    </div>
+    <div class="panel" id="shiftVerdicts"></div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>6 &middot; Figure-ready tables</h2>
+      <p>Copy straight into a plotting package, or take them from the export.</p>
+    </div>
+    <div class="panel" id="figTables"></div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>7 &middot; Study metadata</h2>
+      <p>Travels with the data in the export &mdash; the F in FAIR.</p>
+    </div>
+    <div class="panel">
+      <div class="grid">
+        <div class="field"><label for="mTitle">Dataset title</label><input id="mTitle" type="text" placeholder="e.g. Serum and albumin MIC shift panel, 4 drugs x 6 species"></div>
+        <div class="field"><label for="mAuthor">Investigator</label><input id="mAuthor" type="text" placeholder="Given Family"></div>
+        <div class="field"><label for="mOrcid">ORCID iD</label><input id="mOrcid" type="text" placeholder="0000-0002-1825-0097"></div>
+        <div class="field"><label for="mOrg">Institution</label><input id="mOrg" type="text" placeholder="Department, University"></div>
+        <div class="field"><label for="mMedium">Base medium</label><input id="mMedium" type="text" value="Cation-adjusted Mueller-Hinton broth"></div>
+        <div class="field"><label for="mInoculum">Inoculum density</label><input id="mInoculum" type="text" value="5 x 10^5 CFU/mL"></div>
+        <div class="field"><label for="mIncub">Incubation</label><input id="mIncub" type="text" value="35C, 16-20 h ambient air"></div>
+        <div class="field"><label for="mRun">Run / replicate ID</label><input id="mRun" type="text" placeholder="e.g. run-01-repA"></div>
+      </div>
+      <div class="grid" style="margin-top:13px;">
+        <div class="field"><label for="hAlbumin">Albumin-binding (fu) hypothesis</label><input id="hAlbumin" type="text" placeholder="e.g. Higher fu should track lower MIC shift in +albumin arms."></div>
+        <div class="field"><label for="hStability">Serum-stability hypothesis</label><input id="hStability" type="text" placeholder="e.g. Longer serum preincubation should increase MIC if drug degrades."></div>
+      </div>
+      <div class="field" style="margin-top:13px;">
+        <label for="mDesc">Description</label>
+        <input id="mDesc" type="text" placeholder="One or two sentences on what this run was testing.">
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>8 &middot; Export FAIR data package</h2>
+      <p>One ZIP, self-describing, no proprietary formats.</p>
+    </div>
+    <div class="panel">
+      <p class="note">The download is a <a href="https://datapackage.org/standard/data-package/" target="_blank" rel="noopener">Frictionless Data Package</a>: UTF-8 CSVs plus a <code>datapackage.json</code> that declares every column's type, unit, and meaning. That descriptor is what makes the files machine-readable without a human explaining them, which is the whole point of <em>interoperable</em> and <em>reusable</em>.</p>
+
+      <div class="tablewrap" style="margin-top:14px;max-height:none;">
+        <table>
+          <thead><tr><th>File</th><th>Contents</th></tr></thead>
+          <tbody>
+            <tr><td>datapackage.json</td><td>Schema, units, licence, provenance, full design and criteria</td></tr>
+            <tr><td>README.md</td><td>Methods, column dictionary, assumptions, reuse notes</td></tr>
+            <tr><td>CITATION.cff</td><td>Machine-readable citation metadata</td></tr>
+            <tr><td>LICENSE.txt</td><td>CC BY 4.0 for the data</td></tr>
+            <tr><td>data/assay_design.csv</td><td>Every drug-species pairing and its group</td></tr>
+            <tr><td>data/test_conditions.csv</td><td>Every condition tested, concentration, and units</td></tr>
+            <tr><td>data/mic_results.csv</td><td>Every recorded MIC, one row per combination x condition</td></tr>
+            <tr><td>data/fold_shift.csv</td><td>Fold and log2 fold shift versus control, with interpretation</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="presets" style="margin-top:14px;gap:8px;">
+        <button type="button" id="dlZip" style="font-size:13px;padding:7px 14px;border-color:var(--accent);color:var(--accent);font-weight:600;">Download data package (.zip)</button>
+        <button type="button" id="dlJson">Preview datapackage.json</button>
+      </div>
+      <div id="exportStatus"></div>
+      <pre id="jsonPreview" hidden style="margin-top:12px;max-height:340px;overflow:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.45;color:var(--ink);"></pre>
+
+      <p class="note" style="margin-top:14px;">Data is licensed <strong>CC BY 4.0</strong> and the page itself is MIT &mdash; both are open licences with machine-readable SPDX identifiers, so the package satisfies <em>accessible</em> and <em>reusable</em> without anyone having to email you for permission. The one thing this cannot do for you is mint a persistent identifier: deposit the ZIP in Zenodo, Dryad, or your institutional repository to get a DOI, then add it to <code>CITATION.cff</code>.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>9 &middot; Bench procedure</h2></div>
+    <div class="panel">
+      <ol class="steps">
+        <li><strong>Prepare doubling dilutions</strong> of each drug in cation-adjusted Mueller-Hinton broth (CAMHB), conventionally spanning at least 0.03&ndash;64 mg/L, adjusted to bracket the expected MIC.</li>
+        <li><strong>Prepare additive broths</strong> in parallel: CAMHB + human serum albumin at your chosen g/L, CAMHB + mouse serum albumin, CAMHB + human serum at your chosen % v/v, and CAMHB + mouse serum, each carried through the same doubling-dilution series as the control.</li>
+        <li><strong>Standardize the inoculum</strong> to ~5 &times; 10<sup>5</sup> CFU/mL in each well at the point of inoculation (typically a 1:100 dilution of a 0.5 McFarland suspension), identically across control and additive panels.</li>
+        <li><strong>Incubate</strong> 16&ndash;20 h at 35&deg;C in ambient air (extend or adjust per organism, e.g. 20&ndash;24 h for some fastidious species), then read the lowest concentration with no visible growth as the MIC.</li>
+        <li><strong>Read serum/albumin wells carefully.</strong> Serum and concentrated albumin add background turbidity and can obscure the growth/no-growth endpoint &mdash; read against a matched uninoculated additive-only blank at the same concentration, and consider a colorimetric viability indicator if turbidity alone is ambiguous.</li>
+        <li><strong>Include growth and sterility controls</strong> on every plate: inoculated drug-free broth (growth control) and uninoculated highest-concentration broth (sterility control), for the base medium and for each additive condition.</li>
+        <li><strong>Enter every MIC as you read it</strong> in section 3 &mdash; the fold-shift figures and verdicts in sections 4&ndash;5 recompute immediately, so an implausible shift is visible before the plates are discarded.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    Broth microdilution MIC shift assay: control CAMHB versus user-selected additive or serum-preincubation conditions. Fold shift is MIC(condition) / MIC(control); a &ge;4-fold change is used here as the conventional threshold for a shift distinguishable from doubling-dilution assay noise. Concentrations, preincubation times, and hypotheses are user-editable per run.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SITE = "https://jacobkmcpherson.github.io/chemostat_drip_builder/mic-shift-assay.html";
+  var REPO = "https://github.com/JacobKMcPherson/chemostat_drip_builder";
+
+  var NAME_IDS = ["d1a","d1b","d2a","d2b","s1a","s1b","s1c","s2a","s2b","s2c",
+    "fu1a","fu1b","fu2a","fu2b","expDrugs","expSpecies","setupMode","preTimes",
+    "hAlbumin","hStability"
+  ];
+  var METAIDS = ["mTitle","mAuthor","mOrcid","mOrg","mMedium","mInoculum","mIncub","mRun","mDesc","hAlbumin","hStability"];
+  var el = {};
+  NAME_IDS.concat(METAIDS).forEach(function(k){ el[k] = document.getElementById(k); });
+
+  var CONDITIONS = [
+    {key:"hsa",    label:"Human serum albumin", short:"+ HSA",    unit:"g/L",  def:40, color:"var(--accent)",
+     hint:"Physiologic human serum albumin, ~35\u201350 g/L; 40 g/L is a common CAMHB supplementation target."},
+    {key:"msa",    label:"Mouse serum albumin", short:"+ MSA",    unit:"g/L",  def:30, color:"var(--good)",
+     hint:"Mouse serum albumin runs a little lower than human, commonly cited near 25\u201335 g/L."},
+    {key:"hserum", label:"Human serum",         short:"+ Hu serum", unit:"% v/v", def:50, color:"var(--warn)",
+     hint:"50% v/v is a common readable compromise; some protocols use 90\u2013100% to approximate fully protein-bound conditions."},
+    {key:"mserum", label:"Mouse serum",         short:"+ Mo serum", unit:"% v/v", def:50, color:"var(--bad)",
+     hint:"Matched to the human-serum test concentration so the two species compare at the same dilution."}
+  ];
+  var CONDMAP = {}; CONDITIONS.forEach(function(c){ CONDMAP[c.key] = c; });
+
+  var GROUPS = [
+    {id:"1", drugSlots:["a","b"], speciesSlots:["a","b","c"]},
+    {id:"2", drugSlots:["a","b"], speciesSlots:["a","b","c"]}
+  ];
+
+  var DEMO = {
+    // illustrative fold multipliers versus control MIC, roughly tracking published
+    // protein-binding fractions (meropenem ~2%, ciprofloxacin ~30%, vancomycin ~50%,
+    // daptomycin ~90-95%) -- for demoing the pipeline only, not measured data.
+    "1a": {control:0.25, hsa:1.0,  msa:1.0,  hserum:1.0,  mserum:1.0},
+    "1b": {control:0.06, hsa:1.5,  msa:1.4,  hserum:1.5,  mserum:1.3},
+    "2a": {control:1,    hsa:2,    msa:1.8,  hserum:2,    mserum:1.7},
+    "2b": {control:0.5,  hsa:8,    msa:6,    hserum:8,    mserum:6}
+  };
+
+  var obs = {};       // obs[comboId][condKey] = mg/L
+  var enabled = {};   // enabled[condKey] = bool
+  var conc = {};       // conc[condKey] = number
+  var pre = {human:true, mouse:true, withAlb:false, withoutAlb:true};
+  var synthetic = false;
+  var CUR = null;
+
+  function fmt(x, p){
+    if(!isFinite(x)) return "\u2014";
+    return x.toFixed(p==null?2:p);
+  }
+  function nz(v,p){ return (v===null||v===undefined||!isFinite(v)) ? "" : fmt(v,p); }
+  function esc(s){
+    return String(s==null?"":s).replace(/[&<>"]/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];
+    });
+  }
+  function slug(s, fb){
+    var x=(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+    return x || fb;
+  }
+  function num(v){
+    var n = parseFloat(v);
+    return (isFinite(n) && n > 0) ? n : null;
+  }
+  function num01(v){
+    var n = parseFloat(v);
+    return (isFinite(n) && n >= 0 && n <= 1) ? n : null;
+  }
+  function log2(x){ return Math.log(x) / Math.LN2; }
+  function lines(v){
+    return String(v||"").split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean);
+  }
+  function parseTimes(v){
+    var out = [], seen = {};
+    String(v||"").split(/[,\s]+/).forEach(function(t){
+      if(!t) return;
+      var n = Math.round(parseFloat(t) * 1000000) / 1000000;
+      if(!isFinite(n) || n < 0) return;
+      var k = n.toFixed(6);
+      if(seen[k]) return;
+      seen[k] = true;
+      out.push(n);
+    });
+    return out.sort(function(a,b){ return a-b; });
+  }
+  function setupMode(){ return el.setupMode.value === "preincubation" ? "preincubation" : "additive"; }
+  function conditionList(){
+    if(setupMode() !== "preincubation"){
+      return CONDITIONS.filter(function(c){ return enabled[c.key]; });
+    }
+    var out = [], times = parseTimes(el.preTimes.value);
+    if(!times.length) times = [0];
+    var addModes = [];
+    if(pre.withoutAlb) addModes.push("without");
+    if(pre.withAlb) addModes.push("with");
+    if(!addModes.length) addModes.push("without");
+    var serumArms = [];
+    if(pre.human) serumArms.push({key:"hserum", label:"Human serum", short:"Hu"});
+    if(pre.mouse) serumArms.push({key:"mserum", label:"Mouse serum", short:"Mo"});
+    if(!serumArms.length) serumArms.push({key:"hserum", label:"Human serum", short:"Hu"});
+    serumArms.forEach(function(arm){
+      addModes.forEach(function(am){
+        times.forEach(function(t){
+          var tKey = String(t).replace(/\./g,"p");
+          var albKey = arm.key === "hserum" ? "hsa" : "msa";
+          var withAlb = am === "with";
+          out.push({
+            key:"pre_"+arm.key+"_"+tKey+"h_"+am+"alb",
+            label:arm.label+" preincubation "+t+" h"+(withAlb ? " + "+CONDMAP[albKey].label : " (no albumin)"),
+            short:arm.short+" "+t+"h"+(withAlb?"+Alb":""),
+            unit:"h",
+            preTime:t,
+            preSerum:arm.key,
+            withAlbumin:withAlb,
+            color:withAlb ? CONDMAP[albKey].color : CONDMAP[arm.key].color
+          });
+        });
+      });
+    });
+    return out;
+  }
+
+  function drugName(g,slot){
+    var v = (el["d"+g+slot].value||"").trim();
+    return v || ("Drug "+g+slot.toUpperCase());
+  }
+  function speciesName(g,slot){
+    var v = (el["s"+g+slot].value||"").trim();
+    return v || ("Species "+g+slot);
+  }
+  function shortSpecies(name){
+    var parts = name.trim().split(/\s+/);
+    if(parts.length < 2) return name;
+    return parts[0].charAt(0)+". "+parts.slice(1).join(" ");
+  }
+
+  function combos(){
+    var out = [];
+    GROUPS.forEach(function(g){
+      g.drugSlots.forEach(function(d){
+        g.speciesSlots.forEach(function(s){
+          var fuId = "fu"+g.id+d;
+          out.push({
+            id: g.id+d+s,
+            group: g.id,
+            drugSlot: d,
+            speciesSlot: s,
+            drug: drugName(g.id, d),
+            species: speciesName(g.id, s),
+            controlDrugId: g.id+d,
+            knownFu: num01(el[fuId].value)
+          });
+        });
+      });
+    });
+    var xd = lines(el.expDrugs.value), xs = lines(el.expSpecies.value);
+    xd.forEach(function(drug, di){
+      xs.forEach(function(species, si){
+        out.push({
+          id: "x"+(di+1)+"_"+(si+1),
+          group: "X",
+          drugSlot: "x"+(di+1),
+          speciesSlot: "x"+(si+1),
+          drug: drug,
+          species: species,
+          controlDrugId: null,
+          knownFu: null
+        });
+      });
+    });
+    return out;
+  }
+
+  // ---------- persistence ----------
+  function save(){
+    try{
+      var o = {names:{}, enabled:enabled, conc:conc, pre:pre};
+      NAME_IDS.forEach(function(k){
+        o.names[k] = el[k].value;
+      });
+      localStorage.setItem("micshift_design", JSON.stringify(o));
+    }catch(e){}
+  }
+  function saveObs(){
+    try{ localStorage.setItem("micshift_obs", JSON.stringify({obs:obs, synthetic:synthetic})); }catch(e){}
+  }
+  function saveMeta(){
+    try{
+      var m={}; METAIDS.forEach(function(k){ m[k]=el[k].value; });
+      localStorage.setItem("micshift_meta", JSON.stringify(m));
+    }catch(e){}
+  }
+  function meta(){
+    var m={}; METAIDS.forEach(function(k){ m[k]=(el[k].value||"").trim(); });
+    return m;
+  }
+
+  (function restore(){
+    try{
+      var d = JSON.parse(localStorage.getItem("micshift_design")||"null");
+      if(d){
+        if(d.names) Object.keys(d.names).forEach(function(k){ if(el[k]) el[k].value = d.names[k]; });
+        if(d.enabled) enabled = d.enabled;
+        if(d.conc) conc = d.conc;
+        if(d.pre) pre = d.pre;
+      }
+    }catch(e){}
+    CONDITIONS.forEach(function(c){
+      if(!(c.key in enabled)) enabled[c.key] = true;
+      if(!(c.key in conc) || !isFinite(conc[c.key])) conc[c.key] = c.def;
+    });
+    try{
+      var o = JSON.parse(localStorage.getItem("micshift_obs")||"null");
+      if(o){ obs = o.obs||{}; synthetic = !!o.synthetic; }
+    }catch(e){}
+    try{
+      var sm = JSON.parse(localStorage.getItem("micshift_meta")||"null");
+      if(sm){ METAIDS.forEach(function(k){ if(sm[k]!=null) el[k].value = sm[k]; }); }
+    }catch(e){}
+    pre.human = !!pre.human;
+    pre.mouse = !!pre.mouse;
+    pre.withAlb = !!pre.withAlb;
+    pre.withoutAlb = pre.withoutAlb !== false;
+    document.getElementById("preHuman").checked = pre.human;
+    document.getElementById("preMouse").checked = pre.mouse;
+    document.getElementById("preWithAlbumin").checked = pre.withAlb;
+    document.getElementById("preWithoutAlbumin").checked = pre.withoutAlb;
+  })();
+
+  // ---------- condition selector ----------
+  function renderConditionGrid(){
+    var wrap = document.getElementById("condGrid");
+    var preMode = setupMode() === "preincubation";
+    document.getElementById("preincubOpts").hidden = !preMode;
+    wrap.innerHTML = CONDITIONS.map(function(c){
+      return '<div class="condcard">'+
+        '<div class="chead"><label>'+(preMode
+          ? '<span class="swatch" style="background:'+c.color+'"></span>'+c.label
+          : '<input type="checkbox" data-cond="'+c.key+'" '+(enabled[c.key]?"checked":"")+'>'
+            +'<span class="swatch" style="background:'+c.color+'"></span>'+c.label
+          )+'</label></div>'+
+        '<div class="field"><label for="conc_'+c.key+'">Concentration <span class="unit">'+c.unit+'</span></label>'+
+        '<input id="conc_'+c.key+'" type="number" min="0" step="0.5" value="'+esc(conc[c.key])+'" data-conc="'+c.key+'"></div>'+
+        '<div class="hint">'+(preMode ? c.label+' concentration used in generated preincubation arms.' : c.hint)+'</div>'+
+        '</div>';
+    }).join("");
+    wrap.querySelectorAll("[data-cond]").forEach(function(cb){
+      cb.addEventListener("change", function(){
+        enabled[cb.dataset.cond] = cb.checked;
+        save(); run();
+      });
+    });
+    wrap.querySelectorAll("[data-conc]").forEach(function(inp){
+      inp.addEventListener("input", function(){
+        var def = CONDMAP[inp.dataset.conc].def;
+        var v = parseFloat(inp.value);
+        conc[inp.dataset.conc] = (isFinite(v) && v >= 0) ? v : def;
+        save();
+        refresh();
+      });
+      inp.addEventListener("change", function(){
+        if(parseFloat(inp.value) < 0){
+          conc[inp.dataset.conc] = CONDMAP[inp.dataset.conc].def;
+          inp.value = conc[inp.dataset.conc];
+          save();
+          refresh();
+        }
+      });
+    });
+  }
+
+  function activeConditions(){ return conditionList(); }
+
+  // ---------- data entry table ----------
+  function renderEntry(C){
+    var head = document.getElementById("entryHead");
+    var headHtml = '<th>Group</th><th>Drug</th><th>Species</th><th>Known control MIC (mg/L)</th><th>Measured control (mg/L)</th>' +
+      C.active.map(function(c){ return '<th>'+c.short+' (mg/L)</th>'; }).join("");
+    head.innerHTML = headHtml;
+
+    var tbody = document.querySelector("#entryTable tbody");
+    var lastGroup = null;
+    var rows = C.combos.map(function(combo){
+      var o = obs[combo.id] || {};
+      var rowHead = "";
+      var groupLabel = "Group "+combo.group;
+      var cells = '<td>'+groupLabel+'</td><td>'+esc(combo.drug)+'</td><td>'+esc(combo.species)+'</td>'+
+        '<td><input type="number" min="0" step="any" placeholder="optional" value="'+
+          (o.knownControl!=null?esc(o.knownControl):"")+'" data-combo="'+combo.id+'" data-field="knownControl"'+
+          (o.knownControl!=null?' class="filled"':'')+'></td>'+
+        '<td><input type="number" min="0" step="any" placeholder="\u2013" value="'+
+          (o.control!=null?esc(o.control):"")+'" data-combo="'+combo.id+'" data-field="control"'+
+          (o.control!=null?' class="filled"':'')+'></td>'+
+        C.active.map(function(c){
+          var v = o[c.key];
+          return '<td><input type="number" min="0" step="any" placeholder="\u2013" value="'+
+            (v!=null?esc(v):"")+'" data-combo="'+combo.id+'" data-field="'+c.key+'"'+
+            (v!=null?' class="filled"':'')+'></td>';
+        }).join("");
+      return '<tr>'+cells+'</tr>';
+    }).join("");
+    tbody.innerHTML = rows;
+  }
+
+  function renderEntryStatus(){
+    var C = combos();
+    var filled = 0, total = C.length * (1 + activeConditions().length);
+    C.forEach(function(combo){
+      var o = obs[combo.id] || {};
+      if(o.control!=null) filled++;
+      activeConditions().forEach(function(c){ if(o[c.key]!=null) filled++; });
+    });
+    var msg = filled+" of "+total+" cells recorded"+(synthetic?" \u2014 contains simulated demo values":"");
+    document.getElementById("obsStatus").innerHTML =
+      '<div class="statusmsg'+(synthetic?" err":"")+'">'+msg+'</div>';
+  }
+
+  document.querySelector("#entryTable tbody").addEventListener("input", function(e){
+    var t = e.target;
+    if(!t.dataset || !t.dataset.combo) return;
+    var id = t.dataset.combo, f = t.dataset.field, v = parseFloat(t.value);
+    if(!obs[id]) obs[id] = {};
+    if(t.value === "" || !isFinite(v) || v <= 0){
+      delete obs[id][f];
+      t.classList.remove("filled");
+    } else {
+      obs[id][f] = v;
+      t.classList.add("filled");
+    }
+    saveObs();
+    refresh();
+  });
+
+  document.getElementById("demoFill").addEventListener("click", function(){
+    combos().forEach(function(combo){
+      var mult = DEMO[combo.group+combo.drugSlot];
+      if(!mult) return;
+      var base = mult.control;
+      obs[combo.id] = obs[combo.id] || {};
+      obs[combo.id].control = base;
+      CONDITIONS.forEach(function(c){
+        if(mult[c.key]!=null) obs[combo.id][c.key] = +(base*mult[c.key]).toPrecision(3);
+      });
+    });
+    synthetic = true;
+    saveObs();
+    run();
+    status("obsStatus", "Filled with simulated demo values \u2014 not measured data.", true);
+  });
+
+  document.getElementById("clearObs").addEventListener("click", function(){
+    obs = {}; synthetic = false; saveObs(); run();
+  });
+
+  // ---------- fold-shift computation ----------
+  function foldData(C){
+    var data = {};
+    C.combos.forEach(function(combo){
+      var o = obs[combo.id] || {};
+      var ctrl = o.control!=null ? o.control : o.knownControl;
+      var src = o.control!=null ? "measured" : (o.knownControl!=null ? "known_reference" : null);
+      var f = {};
+      C.active.forEach(function(c){
+        var v = o[c.key];
+        f[c.key] = (ctrl!=null && v!=null) ? {mic:v, fold:v/ctrl, log2fold:log2(v/ctrl)} : null;
+      });
+      data[combo.id] = {control:ctrl, controlSource:src, conditions:f};
+    });
+    return data;
+  }
+
+  // ---------- charts ----------
+  function drugChart(drug, species3, comboIds, C, fold){
+    var W=520, H=230, padL=42, padR=12, padT=14, padB=44;
+    var iw=W-padL-padR, ih=H-padT-padB;
+    var vals = [];
+    comboIds.forEach(function(id){
+      C.active.forEach(function(c){
+        var d = fold[id].conditions[c.key];
+        if(d) vals.push(d.log2fold);
+      });
+    });
+    var lo = Math.min(-2.5, vals.length ? Math.min.apply(null, vals)-0.6 : -2.5);
+    var hi = Math.max(2.5, vals.length ? Math.max.apply(null, vals)+0.6 : 2.5);
+    var y = function(v){ return padT + ih*(1-(v-lo)/(hi-lo)); };
+    var nCat = comboIds.length, nCond = C.active.length || 1;
+    var catW = iw/nCat;
+    var groupPad = catW*0.10;
+    var barW = (catW - 2*groupPad) / nCond;
+
+    var s = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="MIC fold shift for '+esc(drug)+'">';
+    var step = 2;
+    for(var v = Math.ceil(lo/step)*step; v <= hi+0.001; v += step){
+      var isZero = Math.abs(v) < 0.001;
+      s += '<line x1="'+padL+'" y1="'+y(v).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(v).toFixed(1)+
+           '" stroke="'+(isZero?"var(--line-strong)":"var(--line)")+'" stroke-width="1"'+
+           (isZero?'':' stroke-dasharray="3 3"')+'/>';
+      s += '<text x="'+(padL-7)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
+           'font-family="IBM Plex Mono, monospace" font-size="9.5">'+Math.round(v)+'</text>';
+    }
+    comboIds.forEach(function(id, si){
+      var cx = padL + si*catW + catW/2;
+      s += '<text x="'+cx.toFixed(1)+'" y="'+(H-padB+17)+'" text-anchor="middle" fill="var(--ink-2)" '+
+           'font-family="Archivo, sans-serif" font-size="10.5">'+esc(shortSpecies(species3[si]))+'</text>';
+      C.active.forEach(function(c, ci){
+        var d = fold[id].conditions[c.key];
+        if(!d) return;
+        var bx = padL + si*catW + groupPad + ci*barW;
+        var by0 = y(0), by1 = y(Math.max(lo, Math.min(hi, d.log2fold)));
+        var top = Math.min(by0, by1), h = Math.max(1, Math.abs(by1-by0));
+        s += '<rect x="'+bx.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+(barW*0.8).toFixed(1)+
+             '" height="'+h.toFixed(1)+'" fill="'+c.color+'" rx="2"/>';
+      });
+    });
+    s += '<line x1="'+padL+'" y1="'+y(0).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(0).toFixed(1)+
+         '" stroke="var(--ink-3)" stroke-width="1.2"/>';
+    s += '<text x="8" y="'+(padT+8)+'" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace" '+
+         'font-size="10">log&#8322; fold (MIC &divide; control)</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function renderCharts(C, fold){
+    document.getElementById("chartKey").innerHTML = C.active.map(function(c){
+      var cv = c.preSerum ? conc[c.preSerum] : conc[c.key];
+      var u = c.preSerum ? CONDMAP[c.preSerum].unit : c.unit;
+      return '<span><i class="swatch" style="background:'+c.color+'"></i>'+c.label+' ('+fmt(cv,2)+' '+u+')</span>';
+    }).join("") || '<span>No conditions selected \u2014 tick at least one in section 2.</span>';
+
+    var byDrug = {};
+    C.combos.forEach(function(combo){
+      var key = combo.group+combo.drugSlot;
+      (byDrug[key] = byDrug[key] || {drug:combo.drug, species:[], ids:[]});
+      byDrug[key].species.push(combo.species);
+      byDrug[key].ids.push(combo.id);
+    });
+    var order = Object.keys(byDrug).sort();
+    document.getElementById("drugCharts").innerHTML = order.map(function(k){
+      var g = byDrug[k];
+      return '<div class="plotcard"><h3>'+esc(g.drug)+'</h3>'+
+        '<div class="sub">n = '+g.species.length+' species &middot; group '+(k.charAt(0)==="X"?"experimental":k.charAt(0))+'</div>'+
+        '<div class="chartbox">'+drugChart(g.drug, g.species, g.ids, C, fold)+'</div>'+
+        '</div>';
+    }).join("");
+  }
+
+  // ---------- verdicts ----------
+  function verdict(cls, tag, html){
+    return '<div class="verdict v-'+cls+'"><div class="tag">'+tag+'</div><p>'+html+'</p></div>';
+  }
+  function renderVerdicts(C, fold){
+    var flags = [];
+    var completePairs = 0, partialControls = 0;
+    C.combos.forEach(function(combo){
+      var f = fold[combo.id];
+      if(f.control != null) partialControls++;
+      C.active.forEach(function(c){
+        var d = f.conditions[c.key];
+        if(!d) return;
+        completePairs++;
+        if(d.log2fold >= 2){
+          flags.push({sev: d.log2fold>=3?"bad":"warn", combo:combo, cond:c, d:d, dir:"up"});
+        } else if(d.log2fold <= -2){
+          flags.push({sev:"warn", combo:combo, cond:c, d:d, dir:"down"});
+        }
+      });
+    });
+    if(!completePairs){
+      document.getElementById("shiftVerdicts").innerHTML =
+        verdict("ok","Awaiting data",partialControls
+          ? "Control MIC values are present, but no control/condition pair is complete yet &mdash; enter at least one condition MIC to compute a shift."
+          : "No MIC values recorded yet &mdash; enter results in section 3 or use \u201cFill with simulated demo values\u201d to preview the figures.");
+      return;
+    }
+    if(!flags.length){
+      document.getElementById("shiftVerdicts").innerHTML =
+        verdict("ok","No shift \u2265 4-fold","Every recorded condition is within 4-fold of its control MIC \u2014 consistent with ordinary doubling-dilution assay variability rather than a biologically meaningful effect.");
+      return;
+    }
+    document.getElementById("shiftVerdicts").innerHTML = flags.map(function(fl){
+      var say = fl.dir==="up"
+        ? "MIC rose from <strong>"+fmt(fl.d.mic/fl.d.fold,3)+" to "+fmt(fl.d.mic,3)+" mg/L</strong> ("+
+          fmt(fl.d.fold,1)+"&times;, log&#8322; "+fmt(fl.d.log2fold,2)+") &mdash; reduced apparent potency, consistent with protein binding of the free-drug pool."
+        : "MIC fell from <strong>"+fmt(fl.d.mic/fl.d.fold,3)+" to "+fmt(fl.d.mic,3)+" mg/L</strong> ("+
+          fmt(fl.d.fold,2)+"&times;, log&#8322; "+fmt(fl.d.log2fold,2)+") &mdash; an unexpected potentiation; recheck the well reading and additive concentration.";
+      return verdict(fl.sev, esc(fl.combo.drug)+" vs "+esc(fl.combo.species)+" \u00b7 "+fl.cond.short, say);
+    }).join("");
+  }
+
+  // ---------- figure-ready tables / CSV specs ----------
+  function csvCell(v){
+    var s = (v===null||v===undefined) ? "" : String(v);
+    return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+  function toCSV(sp){
+    return [sp.fields.map(function(f){ return csvCell(f.name); }).join(",")]
+      .concat(sp.rows.map(function(r){ return r.map(csvCell).join(","); }))
+      .join("\r\n") + "\r\n";
+  }
+  function toTSV(sp){
+    return [sp.fields.map(function(f){ return f.label+(f.unit?" ("+f.unit+")":""); }).join("\t")]
+      .concat(sp.rows.map(function(r){ return r.join("\t"); }))
+      .join("\n");
+  }
+
+  function tableSpecs(C, fold){
+    var specs = [];
+
+    specs.push({
+      name:"assay_design",
+      title:"Table 1 \u00b7 Assay design",
+      note:"Every drug-species pairing, by group.",
+      fields:[
+        {name:"combo_id", label:"ID", type:"string", description:"Stable identifier: group + drug slot + species slot"},
+        {name:"group", label:"Group", type:"string", description:"Panel group (1 or 2)"},
+        {name:"drug", label:"Drug", type:"string", description:"Antibiotic name"},
+        {name:"species", label:"Species", type:"string", description:"Bacterial species or strain"},
+        {name:"known_fraction_unbound_fu", label:"Known fu", type:"number", description:"Known free fraction (0-1) for control drugs when supplied"}
+      ],
+      rows: C.combos.map(function(c){ return [c.id, c.group, c.drug, c.species, c.knownFu==null?"":fmt(c.knownFu,4)]; })
+    });
+
+    specs.push({
+      name:"test_conditions",
+      title:"Table 2 \u00b7 Test conditions",
+      note:"Every condition selected for this run, with concentration and setup mode.",
+      fields:[
+        {name:"condition", label:"Condition", type:"string", description:"Condition key"},
+        {name:"label", label:"Label", type:"string", description:"Human-readable condition name"},
+        {name:"concentration", label:"Concentration", type:"number", description:"Concentration used"},
+        {name:"unit", label:"Unit", type:"string", description:"Unit of the concentration"},
+       {name:"enabled", label:"Enabled", type:"boolean", description:"Whether this condition was included in the run"},
+       {name:"setup_mode", label:"Setup mode", type:"string", description:"additive or preincubation"},
+       {name:"preincubation_time_h", label:"Preincubation time", type:"number", unit:"h", description:"Time in serum before MIC test (preincubation mode only)"},
+       {name:"preincubation_serum", label:"Preincubation serum", type:"string", description:"hserum or mserum for preincubation mode"},
+       {name:"preincubation_with_albumin", label:"With albumin", type:"boolean", description:"Whether albumin was included during preincubation"}
+      ],
+      rows: [["control", "Control (CAMHB, no additive)", "", "", "true", setupMode(), "", "", ""]].concat(
+       C.active.map(function(c){
+         var cv = (c.preSerum ? conc[c.preSerum] : conc[c.key]);
+         return [c.key, c.label, fmt(cv,2), c.preSerum ? CONDMAP[c.preSerum].unit : c.unit, "true",
+           setupMode(), c.preTime!=null?fmt(c.preTime,3):"", c.preSerum||"", c.withAlbumin!=null?String(!!c.withAlbumin):""];
+       })
+      )
+    });
+
+    specs.push({
+      name:"mic_results",
+      title:"Table 3 \u00b7 MIC results",
+      note:"One row per drug-species combination per recorded condition.",
+      fields:[
+        {name:"combo_id", label:"ID", type:"string", description:"Drug-species combination identifier"},
+        {name:"group", label:"Group", type:"string", description:"Panel group"},
+        {name:"drug", label:"Drug", type:"string", description:"Antibiotic name"},
+        {name:"species", label:"Species", type:"string", description:"Bacterial species or strain"},
+        {name:"condition", label:"Condition", type:"string", description:"control, hsa, msa, hserum, or mserum"},
+        {name:"condition_label", label:"Condition label", type:"string", description:"Human-readable condition name"},
+        {name:"known_control_mic_mg_L", label:"Known control MIC", type:"number", unit:"mg/L", description:"Known reference control MIC (if supplied)"},
+        {name:"measured_control_mic_mg_L", label:"Measured control MIC", type:"number", unit:"mg/L", description:"Measured control MIC for this run"},
+        {name:"mic_mg_L", label:"MIC", type:"number", unit:"mg/L", description:"Broth microdilution MIC"}
+      ],
+      rows: (function(){
+        var out = [];
+        C.combos.forEach(function(combo){
+          var o = obs[combo.id] || {};
+          if(o.control!=null || o.knownControl!=null) out.push([combo.id, combo.group, combo.drug, combo.species, "control", "Control (CAMHB)", fmt(o.knownControl,4), fmt(o.control,4), fmt(o.control!=null?o.control:o.knownControl,4)]);
+          C.active.forEach(function(c){
+            if(o[c.key]!=null) out.push([combo.id, combo.group, combo.drug, combo.species, c.key, c.label, fmt(o.knownControl,4), fmt(o.control,4), fmt(o[c.key],4)]);
+          });
+        });
+        return out;
+      })()
+    });
+
+    specs.push({
+      name:"fold_shift",
+      title:"Table 4 \u00b7 Fold shift versus control",
+      note:"log\u2082 fold \u2265 2 (\u22654-fold) is flagged as a meaningful shift; \u2264 \u22122 is flagged as unexpected potentiation.",
+      fields:[
+        {name:"combo_id", label:"ID", type:"string", description:"Drug-species combination identifier"},
+        {name:"drug", label:"Drug", type:"string", description:"Antibiotic name"},
+        {name:"species", label:"Species", type:"string", description:"Bacterial species or strain"},
+        {name:"condition", label:"Condition", type:"string", description:"hsa, msa, hserum, or mserum"},
+        {name:"control_mic_mg_L", label:"Control MIC", type:"number", unit:"mg/L", description:"Baseline broth microdilution MIC"},
+        {name:"condition_mic_mg_L", label:"Condition MIC", type:"number", unit:"mg/L", description:"MIC under this additive condition"},
+        {name:"control_source", label:"Control source", type:"string", description:"measured or known_reference"},
+        {name:"fold_change", label:"Fold change", type:"number", description:"Condition MIC divided by control MIC"},
+        {name:"log2_fold_change", label:"log2 fold change", type:"number", description:"log base 2 of the fold change"},
+        {name:"interpretation", label:"Interpretation", type:"string", description:"Flag applied at the 4-fold threshold"}
+      ],
+      rows: (function(){
+        var out = [];
+        C.combos.forEach(function(combo){
+          var f = fold[combo.id];
+          C.active.forEach(function(c){
+            var d = f.conditions[c.key];
+            if(!d) return;
+            var interp = d.log2fold >= 2 ? "reduced potency (\u22654-fold rise)"
+                       : d.log2fold <= -2 ? "unexpected potentiation (\u22654-fold fall)"
+                       : "no meaningful shift";
+            out.push([combo.id, combo.drug, combo.species, c.key,
+                      fmt(f.control,4), fmt(d.mic,4), f.controlSource||"", fmt(d.fold,3), fmt(d.log2fold,3), interp]);
+          });
+        });
+        return out;
+      })()
+    });
+
+    return specs;
+  }
+
+  function renderFigTables(specs){
+    document.getElementById("figTables").innerHTML = specs.map(function(sp){
+      var head = sp.fields.map(function(f){
+        return '<th>'+f.label+(f.unit?' <span style="font-weight:400;text-transform:none">('+f.unit+')</span>':'')+'</th>';
+      }).join("");
+      var body = sp.rows.length
+        ? sp.rows.map(function(r){
+            return '<tr>'+r.map(function(c){
+              return '<td>'+(c===""?'<span style="color:var(--ink-3)">\u2014</span>':esc(c))+'</td>';
+            }).join("")+'</tr>';
+          }).join("")
+        : '<tr><td colspan="'+sp.fields.length+'" style="color:var(--ink-3)">No rows yet \u2014 record some results in section 3.</td></tr>';
+      return '<div class="figtab">'+
+        '<div class="caption"><h3>'+sp.title+'</h3><p>'+(sp.note||"")+'</p>'+
+        '<button type="button" class="copybtn" data-copy="'+sp.name+'">Copy TSV</button></div>'+
+        '<div class="tablewrap" style="max-height:340px;"><table><thead><tr>'+head+'</tr></thead>'+
+        '<tbody>'+body+'</tbody></table></div>'+
+        '</div>';
+    }).join("");
+  }
+
+  document.getElementById("figTables").addEventListener("click", function(e){
+    var name = e.target && e.target.dataset ? e.target.dataset.copy : null;
+    if(!name || !CUR) return;
+    var sp = CUR.specs.filter(function(s){ return s.name === name; })[0];
+    if(!sp) return;
+    var text = toTSV(sp), btn = e.target, old = btn.textContent;
+    function done(ok){
+      btn.textContent = ok ? "Copied" : "Copy failed";
+      setTimeout(function(){ btn.textContent = old; }, 1400);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(false); });
+    } else { done(false); }
+  });
+
+  function status(id, msg, isErr){
+    document.getElementById(id).innerHTML =
+      '<div class="statusmsg'+(isErr?" err":"")+'">'+msg+'</div>';
+  }
+
+  // ---------- FAIR export ----------
+  function buildDatapackage(C, specs){
+    var m = meta(), now = new Date().toISOString();
+    var kw = ["MIC shift","broth microdilution","protein binding","serum albumin",
+              "antimicrobial susceptibility","pharmacodynamics"];
+    var contributors = [];
+    if(m.mAuthor){
+      var c = {title:m.mAuthor, role:"author"};
+      if(m.mOrcid) c.path = "https://orcid.org/"+m.mOrcid.replace(/^https?:\/\/orcid\.org\//,"");
+      if(m.mOrg) c.organization = m.mOrg;
+      contributors.push(c);
+    }
+    var desc = m.mDesc ||
+      "Broth microdilution MIC shift panel with configurable drugs/species and additive or serum-preincubation conditions, "+
+      "testing how albumin/serum exposure shifts MIC relative to control.";
+    if(synthetic) desc = "*** CONTAINS SIMULATED VALUES - NOT MEASURED DATA *** " + desc;
+
+    return {
+      profile:"tabular-data-package",
+      name: slug(m.mTitle, "mic-shift-assay-dataset"),
+      title: m.mTitle || "MIC shift assay run",
+      description: desc,
+      created: now,
+      version: "1.0.0",
+      homepage: SITE,
+      licenses:[{
+        name:"CC-BY-4.0",
+        path:"https://creativecommons.org/licenses/by/4.0/",
+        title:"Creative Commons Attribution 4.0 International"
+      }],
+      keywords: kw,
+      contributors: contributors,
+      experiment:{
+        medium: m.mMedium || null,
+        inoculum: m.mInoculum || null,
+        incubation: m.mIncub || null,
+        run_id: m.mRun || null,
+        setup_mode: setupMode(),
+        preincubation: {
+          times_h: parseTimes(el.preTimes.value),
+          include_human_serum: !!pre.human,
+          include_mouse_serum: !!pre.mouse,
+          include_with_albumin: !!pre.withAlb,
+          include_without_albumin: !!pre.withoutAlb
+        },
+        control_drug_fu: {
+          "1a": num01(el.fu1a.value),
+          "1b": num01(el.fu1b.value),
+          "2a": num01(el.fu2a.value),
+          "2b": num01(el.fu2b.value)
+        },
+        hypotheses: {
+          albumin_binding_fu: (m.hAlbumin||"") || null,
+          serum_stability: (m.hStability||"") || null
+        },
+        design: C.combos.map(function(c){ return {id:c.id, group:c.group, drug:c.drug, species:c.species, known_fu:c.knownFu}; }),
+        conditions: C.active.map(function(c){
+          var cv = c.preSerum ? conc[c.preSerum] : conc[c.key];
+          return {key:c.key, label:c.label, concentration:cv, unit:c.preSerum?CONDMAP[c.preSerum].unit:c.unit, enabled:true,
+            preincubation_time_h:c.preTime!=null?c.preTime:null, preincubation_serum:c.preSerum||null, with_albumin:c.withAlbumin==null?null:!!c.withAlbumin};
+        }),
+        contains_simulated_values: synthetic
+      },
+      provenance:{
+        generated_by:"MIC Shift Assay Builder",
+        software_url: SITE,
+        source_code: REPO,
+        generated_at: now,
+        model:"Fold shift = MIC(condition) / MIC(control); reported as log2(fold).",
+        assumptions:[
+          "All MICs are read as the lowest concentration with no visible growth after 16-20 h at 35C.",
+          "Control and additive panels share an identical inoculum and dilution series.",
+          "A change of at least 4-fold (2 doubling dilutions, |log2 fold| >= 2) is treated as distinguishable from ordinary assay variability.",
+          "Serum and albumin concentrations are user-entered and not independently verified by this tool.",
+          "This tool performs no statistical testing across replicates; it reports single recorded MIC values."
+        ]
+      },
+      resources: specs.map(function(sp){
+        return {
+          name: sp.name,
+          path: "data/"+sp.name+".csv",
+          profile:"tabular-data-resource",
+          format:"csv",
+          mediatype:"text/csv",
+          encoding:"utf-8",
+          title: sp.title ? sp.title.replace(/^Table \d+ \S+ /,"") : sp.name,
+          dialect:{delimiter:",", lineTerminator:"\r\n", header:true},
+          schema:{ fields: sp.fields.map(function(f){
+            var o = {name:f.name, type:f.type, description:f.description};
+            if(f.unit) o.unit = f.unit;
+            return o;
+          })}
+        };
+      })
+    };
+  }
+
+  function buildReadme(C, specs){
+    var m = meta(), L = [];
+    L.push("# "+(m.mTitle || "MIC shift assay run"));
+    L.push("");
+    if(synthetic){
+      L.push("> **WARNING - THIS PACKAGE CONTAINS SIMULATED VALUES.**");
+      L.push("> Some or all MICs were generated by the builder's demo filler, not measured at a");
+      L.push("> bench. Do not cite, publish, or pool these as real data.");
+      L.push("");
+    }
+    if(m.mDesc){ L.push(m.mDesc); L.push(""); }
+    L.push("Generated by [MIC Shift Assay Builder]("+SITE+") on "+new Date().toISOString()+".");
+    L.push("");
+    L.push("## Experiment");
+    L.push("");
+    L.push("| Field | Value |");
+    L.push("| --- | --- |");
+    [["Investigator",m.mAuthor],["ORCID",m.mOrcid],["Institution",m.mOrg],
+     ["Base medium",m.mMedium],["Inoculum",m.mInoculum],["Incubation",m.mIncub],
+     ["Run / replicate",m.mRun]
+    ].forEach(function(p){ if(p[1]) L.push("| "+p[0]+" | "+p[1]+" |"); });
+    L.push("");
+    L.push("## Design");
+    L.push("");
+    L.push("Broth microdilution MIC shift assay: "+C.combos.length+" drug-species combinations (control");
+    L.push("panels plus any user-added experimental drug/species lines), each read under the control");
+    L.push("medium and under the generated conditions for the selected setup mode.");
+    L.push("");
+    L.push("- Setup mode: **"+setupMode()+"**");
+    if(setupMode()==="preincubation"){
+      L.push("- Preincubation times (h): "+(parseTimes(el.preTimes.value).join(", ")||"0"));
+      L.push("- Human serum arm: "+(pre.human?"enabled":"disabled"));
+      L.push("- Mouse serum arm: "+(pre.mouse?"enabled":"disabled"));
+      L.push("- With albumin arm: "+(pre.withAlb?"enabled":"disabled"));
+      L.push("- Without albumin arm: "+(pre.withoutAlb?"enabled":"disabled"));
+    }
+    C.active.forEach(function(c){
+      var cv = c.preSerum ? conc[c.preSerum] : conc[c.key];
+      L.push("- **"+c.label+"**: "+fmt(cv,2)+" "+(c.preSerum?CONDMAP[c.preSerum].unit:c.unit));
+    });
+    L.push("");
+    L.push("Known control-drug fu entries:");
+    L.push("- Drug 1A: "+(num01(el.fu1a.value)==null?"not set":fmt(num01(el.fu1a.value),3)));
+    L.push("- Drug 1B: "+(num01(el.fu1b.value)==null?"not set":fmt(num01(el.fu1b.value),3)));
+    L.push("- Drug 2A: "+(num01(el.fu2a.value)==null?"not set":fmt(num01(el.fu2a.value),3)));
+    L.push("- Drug 2B: "+(num01(el.fu2b.value)==null?"not set":fmt(num01(el.fu2b.value),3)));
+    L.push("");
+    if(m.hAlbumin || m.hStability){
+      L.push("Hypotheses:");
+      if(m.hAlbumin) L.push("- Albumin binding / fu: "+m.hAlbumin);
+      if(m.hStability) L.push("- Serum stability: "+m.hStability);
+      L.push("");
+    }
+    L.push("## Method");
+    L.push("");
+    L.push("Doubling-dilution MICs were read in cation-adjusted Mueller-Hinton broth (control) and in");
+    L.push("broth supplemented with each enabled additive, at the concentration listed above, after");
+    L.push("16-20 h incubation at 35C with a ~5x10^5 CFU/mL inoculum. Fold shift is the additive-condition");
+    L.push("MIC divided by the matched control MIC for the same drug-species combination:");
+    L.push("");
+    L.push("```text");
+    L.push("fold_change      = MIC(condition) / MIC(control)");
+    L.push("log2_fold_change = log2(fold_change)");
+    L.push("```");
+    L.push("");
+    L.push("A shift is flagged when `|log2_fold_change| >= 2` (a 4-fold change, or two doubling");
+    L.push("dilutions) \u2014 the conventional bar for a change distinguishable from ordinary well-to-well");
+    L.push("assay variability on a two-fold dilution series.");
+    L.push("");
+    L.push("## Files");
+    L.push("");
+    L.push("| Path | Contents |");
+    L.push("| --- | --- |");
+    L.push("| `datapackage.json` | Frictionless descriptor: types, units, licence, provenance |");
+    specs.forEach(function(sp){
+      L.push("| `data/"+sp.name+".csv` | "+sp.title.replace(/^Table \d+ \S+ /,"")+" |");
+    });
+    L.push("| `CITATION.cff` | Machine-readable citation metadata |");
+    L.push("| `LICENSE.txt` | CC BY 4.0 |");
+    L.push("");
+    L.push("## Column dictionary");
+    L.push("");
+    specs.forEach(function(sp){
+      L.push("### `data/"+sp.name+".csv`");
+      L.push("");
+      L.push("| Column | Type | Unit | Meaning |");
+      L.push("| --- | --- | --- | --- |");
+      sp.fields.forEach(function(f){
+        L.push("| `"+f.name+"` | "+f.type+" | "+(f.unit||"-")+" | "+f.description+" |");
+      });
+      L.push("");
+    });
+    L.push("## Assumptions and limits");
+    L.push("");
+    L.push("- MICs are single recorded readings, not averaged replicates; run and record replicates");
+    L.push("  separately if your protocol requires them.");
+    L.push("- The 4-fold flagging threshold is a heuristic based on doubling-dilution assay resolution,");
+    L.push("  not a formal statistical test.");
+    L.push("- Serum and albumin concentrations are exactly what was typed into the concentration field");
+    L.push("  for this run; they are not independently verified.");
+    L.push("- Turbidity from serum or concentrated albumin can obscure the growth/no-growth endpoint;");
+    L.push("  read against a matched uninoculated additive blank.");
+    L.push("");
+    L.push("## Reuse");
+    L.push("");
+    L.push("Data are licensed CC BY 4.0 (SPDX: `CC-BY-4.0`). Attribute the investigator named above.");
+    L.push("To make this package citable, deposit it in Zenodo, Dryad, or an institutional repository");
+    L.push("to mint a DOI, then add that DOI to `CITATION.cff` and `datapackage.json`.");
+    L.push("");
+    return L.join("\n");
+  }
+
+  function buildCitation(){
+    var m = meta(), L = [];
+    L.push("cff-version: 1.2.0");
+    L.push('message: "If you use this dataset, please cite it as below."');
+    L.push("type: dataset");
+    L.push('title: "'+(m.mTitle || "MIC shift assay run").replace(/"/g,"'")+'"');
+    L.push("authors:");
+    if(m.mAuthor){
+      var parts = m.mAuthor.trim().split(/\s+/);
+      if(parts.length > 1){
+        var family = parts.pop();
+        L.push('  - family-names: "'+family.replace(/"/g,"'")+'"');
+        L.push('    given-names: "'+parts.join(" ").replace(/"/g,"'")+'"');
+      } else {
+        L.push('  - name: "'+m.mAuthor.replace(/"/g,"'")+'"');
+      }
+      if(m.mOrcid){
+        L.push('    orcid: "https://orcid.org/'+
+               m.mOrcid.replace(/^https?:\/\/orcid\.org\//,"").replace(/"/g,"")+'"');
+      }
+      if(m.mOrg) L.push('    affiliation: "'+m.mOrg.replace(/"/g,"'")+'"');
+    } else {
+      L.push('  - name: "Unattributed"');
+    }
+    L.push("date-released: "+new Date().toISOString().slice(0,10));
+    L.push("version: 1.0.0");
+    L.push("license: CC-BY-4.0");
+    L.push("url: "+SITE);
+    if(m.mDesc) L.push('abstract: "'+m.mDesc.replace(/"/g,"'")+'"');
+    L.push("keywords:");
+    ["MIC shift","broth microdilution","protein binding","serum albumin"].forEach(function(k){
+      L.push('  - "'+k+'"');
+    });
+    L.push("");
+    return L.join("\n");
+  }
+
+  var LICENSE_TXT = [
+    "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "SPDX-License-Identifier: CC-BY-4.0",
+    "",
+    "The data in this package are licensed under the Creative Commons Attribution 4.0",
+    "International License. You are free to share and adapt the material for any purpose,",
+    "including commercially, provided you give appropriate credit, link to the licence,",
+    "and indicate if changes were made.",
+    "",
+    "Full legal code:  https://creativecommons.org/licenses/by/4.0/legalcode",
+    "Plain summary:    https://creativecommons.org/licenses/by/4.0/",
+    "",
+    "The MIC Shift Assay Builder software that produced this package is separately licensed",
+    "under the MIT Licence: "+REPO,
+    ""
+  ].join("\n");
+
+  // ---------- zip writer (store method, no dependencies) ----------
+  var CRCT = (function(){
+    var t = new Uint32Array(256);
+    for(var i=0;i<256;i++){
+      var c=i;
+      for(var k=0;k<8;k++) c = (c&1) ? (0xEDB88320^(c>>>1)) : (c>>>1);
+      t[i]=c>>>0;
+    }
+    return t;
+  })();
+  function crc32(b){
+    var c=0xFFFFFFFF;
+    for(var i=0;i<b.length;i++) c = CRCT[(c^b[i])&0xFF] ^ (c>>>8);
+    return (c^0xFFFFFFFF)>>>0;
+  }
+  function zip(files){
+    var enc = new TextEncoder(), local=[], central=[], offset=0, d=new Date();
+    var dosTime = ((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1)) & 0xFFFF;
+    var dosDate = (((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate()) & 0xFFFF;
+    files.forEach(function(f){
+      var name=enc.encode(f.name), data=enc.encode(f.text), crc=crc32(data);
+      var lh=new Uint8Array(30+name.length), lv=new DataView(lh.buffer);
+      lv.setUint32(0,0x04034b50,true); lv.setUint16(4,20,true);
+      lv.setUint16(6,0x0800,true);     lv.setUint16(8,0,true);
+      lv.setUint16(10,dosTime,true);   lv.setUint16(12,dosDate,true);
+      lv.setUint32(14,crc,true);       lv.setUint32(18,data.length,true);
+      lv.setUint32(22,data.length,true);
+      lv.setUint16(26,name.length,true); lv.setUint16(28,0,true);
+      lh.set(name,30);
+      local.push(lh, data);
+
+      var ch=new Uint8Array(46+name.length), cv=new DataView(ch.buffer);
+      cv.setUint32(0,0x02014b50,true); cv.setUint16(4,20,true); cv.setUint16(6,20,true);
+      cv.setUint16(8,0x0800,true);     cv.setUint16(10,0,true);
+      cv.setUint16(12,dosTime,true);   cv.setUint16(14,dosDate,true);
+      cv.setUint32(16,crc,true);       cv.setUint32(20,data.length,true);
+      cv.setUint32(24,data.length,true);
+      cv.setUint16(28,name.length,true); cv.setUint16(30,0,true); cv.setUint16(32,0,true);
+      cv.setUint16(34,0,true); cv.setUint16(36,0,true); cv.setUint32(38,0,true);
+      cv.setUint32(42,offset,true);
+      ch.set(name,46);
+      central.push(ch);
+      offset += lh.length + data.length;
+    });
+    var cdSize = central.reduce(function(a,b){ return a+b.length; },0);
+    var eo=new Uint8Array(22), ev=new DataView(eo.buffer);
+    ev.setUint32(0,0x06054b50,true);
+    ev.setUint16(4,0,true); ev.setUint16(6,0,true);
+    ev.setUint16(8,files.length,true); ev.setUint16(10,files.length,true);
+    ev.setUint32(12,cdSize,true); ev.setUint32(16,offset,true); ev.setUint16(20,0,true);
+    return new Blob(local.concat(central,[eo]), {type:"application/zip"});
+  }
+  function download(blob, filename){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 0);
+  }
+
+  function packageFiles(C){
+    var specs = tableSpecs(C, CUR.fold);
+    var files = [
+      {name:"datapackage.json", text:JSON.stringify(buildDatapackage(C, specs), null, 2)},
+      {name:"README.md",        text:buildReadme(C, specs)},
+      {name:"CITATION.cff",     text:buildCitation()},
+      {name:"LICENSE.txt",      text:LICENSE_TXT}
+    ];
+    specs.forEach(function(sp){ files.push({name:"data/"+sp.name+".csv", text:toCSV(sp)}); });
+    return files;
+  }
+
+  // ---------- run loop ----------
+  function run(){
+    var C = {combos: combos(), active: activeConditions()};
+    var fold = foldData(C);
+    document.getElementById("comboCount").textContent = C.combos.length+" combinations";
+    renderConditionGrid();
+    renderEntry(C);
+    renderEntryStatus();
+    renderCharts(C, fold);
+    renderVerdicts(C, fold);
+    var specs = tableSpecs(C, fold);
+    renderFigTables(specs);
+    CUR = {C:C, fold:fold, specs:specs};
+    save();
+  }
+
+  // Recompute everything that depends on recorded values without rebuilding
+  // the condition grid or the name inputs the user might be typing into.
+  function refresh(){
+    var C = {combos: combos(), active: activeConditions()};
+    var fold = foldData(C);
+    renderEntryStatus();
+    renderCharts(C, fold);
+    renderVerdicts(C, fold);
+    var specs = tableSpecs(C, fold);
+    renderFigTables(specs);
+    CUR = {C:C, fold:fold, specs:specs};
+  }
+
+  ["d1a","d1b","d2a","d2b","s1a","s1b","s1c","s2a","s2b","s2c",
+   "expDrugs","expSpecies","fu1a","fu1b","fu2a","fu2b","setupMode","preTimes"
+  ].forEach(function(k){
+    el[k].addEventListener("input", run);
+  });
+  el.setupMode.addEventListener("change", run);
+  ["preHuman","preMouse","preWithAlbumin","preWithoutAlbumin"].forEach(function(k){
+    document.getElementById(k).addEventListener("change", function(){
+      pre.human = document.getElementById("preHuman").checked;
+      pre.mouse = document.getElementById("preMouse").checked;
+      pre.withAlb = document.getElementById("preWithAlbumin").checked;
+      pre.withoutAlb = document.getElementById("preWithoutAlbumin").checked;
+      save();
+      run();
+    });
+  });
+  METAIDS.forEach(function(k){
+    el[k].addEventListener("input", function(){ saveMeta(); status("exportStatus",""); });
+  });
+
+  document.getElementById("dlZip").addEventListener("click", function(){
+    if(!CUR) return;
+    try{
+      var files = packageFiles(CUR.C);
+      var m = meta();
+      var stamp = new Date().toISOString().slice(0,10);
+      var base = slug(m.mRun || m.mTitle, "mic-shift-assay");
+      download(zip(files), base+"_"+stamp+".zip");
+      status("exportStatus", "Wrote "+files.length+" files"+
+        (synthetic ? " \u2014 flagged as containing simulated values." : "."));
+    }catch(err){
+      status("exportStatus", "Export failed: "+err.message, true);
+    }
+  });
+
+  document.getElementById("dlJson").addEventListener("click", function(){
+    if(!CUR) return;
+    var pre = document.getElementById("jsonPreview");
+    if(!pre.hidden){ pre.hidden = true; return; }
+    pre.textContent = JSON.stringify(buildDatapackage(CUR.C, CUR.specs), null, 2);
+    pre.hidden = false;
+  });
+
+  run();
+})();
+</script>
+
+</body>
+</html>
