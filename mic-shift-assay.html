@@ -202,6 +202,16 @@
   .plotcard h3{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
   .plotcard .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);margin-top:3px;}
 
+  .tabs{display:flex;gap:6px;margin-bottom:11px;flex-wrap:wrap;}
+  .tabs button{
+    font-family:"Archivo",sans-serif;font-size:13px;font-weight:500;
+    background:var(--surface);color:var(--ink-2);
+    border:1px solid var(--line);border-radius:7px;padding:6px 12px;cursor:pointer;
+  }
+  .tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+  :root[data-theme="dark"] .tabs button[aria-pressed="true"],
+  .tabs button[aria-pressed="true"]{color:var(--surface);}
+
   /* ---- tables ---- */
   .tablewrap{overflow-x:auto;max-height:460px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);}
   table{border-collapse:collapse;width:100%;font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;}
@@ -467,6 +477,7 @@
       <p>One row per drug&ndash;species combination. Enter known control MIC (optional) and measured MIC in mg/L (equivalent to &micro;g/mL); leave a cell blank if that condition was not assayed.</p>
     </div>
     <div class="panel">
+      <div class="tabs" role="group" aria-label="Experimental condition set" id="entryTabs" hidden></div>
       <div class="tablewrap">
         <table id="entryTable">
           <thead><tr id="entryHead"></tr></thead>
@@ -654,6 +665,7 @@
   var pre = {human:true, mouse:true, withAlb:false, withoutAlb:true};
   var synthetic = false;
   var CUR = null;
+  var entryTabKey = null; // selected condition-set tab in the data-entry table (preincubation mode)
 
   function fmt(x, p){
     if(!isFinite(x)) return "\u2014";
@@ -1013,18 +1025,64 @@
 
   function activeConditions(){ return conditionList(); }
 
+  // Group the active conditions into "experimental condition sets" so the data-entry
+  // table has fewer columns to fill across. In preincubation mode each set is one
+  // serum arm crossed with albumin status, with preincubation time as the only
+  // remaining column; in additive mode there is just a single set (no tabs shown).
+  function conditionSets(active){
+    if(setupMode() !== "preincubation"){
+      return [{key:"all", label:null, conds:active}];
+    }
+    var order = [], map = {};
+    active.forEach(function(c){
+      var k = c.preSerum+"|"+(c.withAlbumin?"1":"0");
+      if(!map[k]){
+        var albKey = c.preSerum === "hserum" ? "hsa" : "msa";
+        var armLabel = c.preSerum === "hserum" ? "Human serum" : "Mouse serum";
+        map[k] = {
+          key:k,
+          label: armLabel + (c.withAlbumin ? " + "+CONDMAP[albKey].label : " (no albumin)"),
+          conds:[]
+        };
+        order.push(map[k]);
+      }
+      map[k].conds.push(c);
+    });
+    return order.length ? order : [{key:"all", label:null, conds:active}];
+  }
+
   // ---------- data entry table ----------
   function renderEntry(C){
+    var sets = conditionSets(C.active);
+    var tabsEl = document.getElementById("entryTabs");
+    var showTabs = sets.length > 1 && sets[0].label != null;
+    if(!showTabs){
+      tabsEl.hidden = true;
+      tabsEl.innerHTML = "";
+      if(sets.length === 1) entryTabKey = sets[0].key;
+    } else {
+      tabsEl.hidden = false;
+      if(!sets.some(function(s){ return s.key === entryTabKey; })) entryTabKey = sets[0].key;
+      tabsEl.innerHTML = sets.map(function(s){
+        return '<button type="button" data-tab="'+esc(s.key)+'" aria-pressed="'+(s.key===entryTabKey?"true":"false")+'">'+esc(s.label)+'</button>';
+      }).join("");
+      tabsEl.querySelectorAll("[data-tab]").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          entryTabKey = btn.dataset.tab;
+          renderEntry(C);
+        });
+      });
+    }
+    var active = (sets.filter(function(s){ return s.key === entryTabKey; })[0] || sets[0]).conds;
+
     var head = document.getElementById("entryHead");
     var headHtml = '<th>Group</th><th>Drug</th><th>Species</th><th>Known control MIC (mg/L)</th><th>Measured control (mg/L)</th>' +
-      C.active.map(function(c){ return '<th>'+c.short+' (mg/L)</th>'; }).join("");
+      active.map(function(c){ return '<th>'+c.short+' (mg/L)</th>'; }).join("");
     head.innerHTML = headHtml;
 
     var tbody = document.querySelector("#entryTable tbody");
-    var lastGroup = null;
     var rows = C.combos.map(function(combo){
       var o = obs[combo.id] || {};
-      var rowHead = "";
       var groupLabel = "Group "+combo.group;
       var cells = '<td>'+groupLabel+'</td><td>'+esc(combo.drug)+'</td><td>'+esc(combo.species)+'</td>'+
         '<td><input type="number" min="0" step="any" placeholder="optional" value="'+
@@ -1033,7 +1091,7 @@
         '<td><input type="number" min="0" step="any" placeholder="\u2013" value="'+
           (o.control!=null?esc(o.control):"")+'" data-combo="'+combo.id+'" data-field="control"'+
           (o.control!=null?' class="filled"':'')+'></td>'+
-        C.active.map(function(c){
+        active.map(function(c){
           var v = o[c.key];
           return '<td><input type="number" min="0" step="any" placeholder="\u2013" value="'+
             (v!=null?esc(v):"")+'" data-combo="'+combo.id+'" data-field="'+c.key+'"'+
