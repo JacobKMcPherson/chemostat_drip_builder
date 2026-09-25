@@ -323,14 +323,14 @@
           <div class="grouphead"><h3>Panel summary</h3><span id="comboCount">12 combinations</span></div>
           <p class="note">Each of the 4 drugs is tested against its group's 3 species, always as a broth microdilution doubling-dilution series, giving 12 baseline drug&ndash;species MICs before any serum or albumin is added.</p>
           <div class="field" style="margin-top:10px;">
-            <label for="expDrugs">Additional experimental drugs (one per line)</label>
-            <textarea id="expDrugs" placeholder="e.g.\nCefiderocol\nLinezolid"></textarea>
+            <label for="expDrugs">Additional experimental drugs (one per line, optional ", fu")</label>
+            <textarea id="expDrugs" placeholder="e.g.&#10;Cefiderocol, 0.42&#10;Linezolid"></textarea>
           </div>
           <div class="field" style="margin-top:10px;">
             <label for="expSpecies">Additional experimental species / strains (one per line)</label>
-            <textarea id="expSpecies" placeholder="e.g.\nAcinetobacter baumannii ATCC 17978\nEscherichia coli NCTC 13400"></textarea>
+            <textarea id="expSpecies" placeholder="e.g.&#10;Acinetobacter baumannii ATCC 17978&#10;Escherichia coli NCTC 13400"></textarea>
           </div>
-          <p class="note">Defaults pair two low/high protein-binding Gram-negative agents with Gram-negatives, and two low/high protein-binding Gram-positive agents with Gram-positives &mdash; a spread deliberately chosen to illustrate that protein binding, not spectrum, drives the size of the shift.</p>
+          <p class="note">Defaults pair two low/high protein-binding Gram-negative agents with Gram-negatives, and two low/high protein-binding Gram-positive agents with Gram-positives &mdash; a spread deliberately chosen to illustrate that protein binding, not spectrum, drives the size of the shift. Give an experimental drug a known fu (e.g. <code>Cefiderocol, 0.42</code>) to include it in the fraction-unbound explorer below.</p>
         </div>
       </div>
     </div>
@@ -368,7 +368,26 @@
 
   <section>
     <div class="sechead">
-      <h2>3 &middot; Record broth microdilution MIC results</h2>
+      <h2>3 &middot; Fraction-unbound vs. concentration explorer</h2>
+      <p>Real-time model of how much of each drug stays free as its own concentration and the ambient albumin level both vary &mdash; independent of any recorded MIC.</p>
+    </div>
+    <div class="panel">
+      <div class="grid">
+        <div class="field"><label for="feMin">Drug concentration range, min <span class="unit">mg/L</span></label><input id="feMin" type="number" min="0.001" step="any" value="0.03"></div>
+        <div class="field"><label for="feMax">Drug concentration range, max <span class="unit">mg/L</span></label><input id="feMax" type="number" min="0.001" step="any" value="64"></div>
+        <div class="field"><label for="feBmax">Assumed binding-site capacity <span class="unit">mg/L</span></label><input id="feBmax" type="number" min="0.01" step="any" value="30"></div>
+        <div class="field"><label for="feAlbList">Albumin concentrations to compare <span class="unit">g/L, comma separated</span></label><input id="feAlbList" type="text" value="0, 25, 30, 35, 40, 50"></div>
+      </div>
+      <p class="hint" style="margin-top:9px;">Each drug's known fu (section 1) is treated as measured at trace drug concentration against ~40 g/L human serum albumin &mdash; the conventional equilibrium-dialysis reference point. From that single point, one-site saturable binding derives an apparent affinity and predicts fu at any other drug concentration or albumin level: fu falls as albumin rises, and rises again once drug concentration approaches the assumed binding capacity. Only drugs with a known fu entered in section 1 appear below; treat every curve as an illustrative sensitivity analysis, not a validated pharmacokinetic model.</p>
+      <div class="keyrow" id="feKey" style="margin-top:12px;"></div>
+      <div class="plots" id="feCharts"></div>
+      <div class="tablewrap" style="margin-top:14px;" id="feTableWrap"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>4 &middot; Record broth microdilution MIC results</h2>
       <p>One row per drug&ndash;species combination. Enter known control MIC (optional) and measured MIC in mg/L (equivalent to &micro;g/mL); leave a cell blank if that condition was not assayed.</p>
     </div>
     <div class="panel">
@@ -388,7 +407,7 @@
 
   <section>
     <div class="sechead">
-      <h2>4 &middot; Real-time fold-shift figures</h2>
+      <h2>5 &middot; Real-time fold-shift figures</h2>
       <p>MIC of each additive condition divided by the control MIC, plotted as log&#8322; fold. Bars above the dashed line at +2 represent a &ge;4-fold rise (reduced apparent potency); below &minus;2 is a &ge;4-fold fall.</p>
     </div>
     <div class="panel">
@@ -400,7 +419,7 @@
 
   <section>
     <div class="sechead">
-      <h2>5 &middot; Shift verdicts</h2>
+      <h2>6 &middot; Shift verdicts</h2>
       <p>Flags every recorded condition that clears the &ge;4-fold bar.</p>
     </div>
     <div class="panel" id="shiftVerdicts"></div>
@@ -408,7 +427,7 @@
 
   <section>
     <div class="sechead">
-      <h2>6 &middot; Figure-ready tables</h2>
+      <h2>7 &middot; Figure-ready tables</h2>
       <p>Copy straight into a plotting package, or take them from the export.</p>
     </div>
     <div class="panel" id="figTables"></div>
@@ -416,7 +435,7 @@
 
   <section>
     <div class="sechead">
-      <h2>7 &middot; Study metadata</h2>
+      <h2>8 &middot; Study metadata</h2>
       <p>Travels with the data in the export &mdash; the F in FAIR.</p>
     </div>
     <div class="panel">
@@ -443,7 +462,7 @@
 
   <section>
     <div class="sechead">
-      <h2>8 &middot; Export FAIR data package</h2>
+      <h2>9 &middot; Export FAIR data package</h2>
       <p>One ZIP, self-describing, no proprietary formats.</p>
     </div>
     <div class="panel">
@@ -477,7 +496,7 @@
   </section>
 
   <section>
-    <div class="sechead"><h2>9 &middot; Bench procedure</h2></div>
+    <div class="sechead"><h2>10 &middot; Bench procedure</h2></div>
     <div class="panel">
       <ol class="steps">
         <li><strong>Prepare doubling dilutions</strong> of each drug in cation-adjusted Mueller-Hinton broth (CAMHB), conventionally spanning at least 0.03&ndash;64 mg/L, adjusted to bracket the expected MIC.</li>
@@ -486,10 +505,11 @@
         <li><strong>Incubate</strong> 16&ndash;20 h at 35&deg;C in ambient air (extend or adjust per organism, e.g. 20&ndash;24 h for some fastidious species), then read the lowest concentration with no visible growth as the MIC.</li>
         <li><strong>Read serum/albumin wells carefully.</strong> Serum and concentrated albumin add background turbidity and can obscure the growth/no-growth endpoint &mdash; read against a matched uninoculated additive-only blank at the same concentration, and consider a colorimetric viability indicator if turbidity alone is ambiguous.</li>
         <li><strong>Include growth and sterility controls</strong> on every plate: inoculated drug-free broth (growth control) and uninoculated highest-concentration broth (sterility control), for the base medium and for each additive condition.</li>
-        <li><strong>Enter every MIC as you read it</strong> in section 3 &mdash; the fold-shift figures and verdicts in sections 4&ndash;5 recompute immediately, so an implausible shift is visible before the plates are discarded.</li>
+        <li><strong>Enter every MIC as you read it</strong> in section 4 &mdash; the fold-shift figures and verdicts in sections 5&ndash;6 recompute immediately, so an implausible shift is visible before the plates are discarded.</li>
       </ol>
     </div>
   </section>
+
 
   <footer>
     Broth microdilution MIC shift assay: control CAMHB versus user-selected additive or serum-preincubation conditions. Fold shift is MIC(condition) / MIC(control); a &ge;4-fold change is used here as the conventional threshold for a shift distinguishable from doubling-dilution assay noise. Concentrations, preincubation times, and hypotheses are user-editable per run.
@@ -505,7 +525,7 @@
 
   var NAME_IDS = ["d1a","d1b","d2a","d2b","s1a","s1b","s1c","s2a","s2b","s2c",
     "fu1a","fu1b","fu2a","fu2b","expDrugs","expSpecies","setupMode","preTimes",
-    "hAlbumin","hStability"
+    "hAlbumin","hStability","feMin","feMax","feBmax","feAlbList"
   ];
   var METAIDS = ["mTitle","mAuthor","mOrcid","mOrg","mMedium","mInoculum","mIncub","mRun","mDesc","hAlbumin","hStability"];
   var el = {};
@@ -571,7 +591,7 @@
   function lines(v){
     return String(v||"").split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean);
   }
-  function parseTimes(v){
+  function parseNumList(v){
     var out = [], seen = {};
     String(v||"").split(/[,\s]+/).forEach(function(t){
       if(!t) return;
@@ -583,6 +603,13 @@
       out.push(n);
     });
     return out.sort(function(a,b){ return a-b; });
+  }
+  var parseTimes = parseNumList; // alias: comma/space separated hours list (section 2)
+  function parseExpDrugLine(line){
+    var parts = String(line||"").split(",");
+    var name = (parts[0]||"").trim();
+    var fu = parts.length > 1 ? num01(parts[1]) : null;
+    return {name:name, fu:fu};
   }
   function setupMode(){ return el.setupMode.value === "preincubation" ? "preincubation" : "additive"; }
   function conditionList(){
@@ -654,27 +681,151 @@
         });
       });
     });
-    var xd = lines(el.expDrugs.value), xs = lines(el.expSpecies.value);
-    xd.forEach(function(drug, di){
+    var xd = lines(el.expDrugs.value).map(parseExpDrugLine), xs = lines(el.expSpecies.value);
+    xd.forEach(function(dp, di){
       xs.forEach(function(species, si){
         out.push({
           id: "x"+(di+1)+"_"+(si+1),
           group: "X",
           drugSlot: "x"+(di+1),
           speciesSlot: "x"+(si+1),
-          drug: drug,
+          drug: dp.name || ("Experimental drug "+(di+1)),
           species: species,
           controlDrugId: null,
-          knownFu: null
+          knownFu: dp.fu
         });
       });
     });
     return out;
   }
 
+  // ---------- fraction-unbound (fu) vs. concentration explorer ----------
+  var FU_PREF = 40; // g/L human serum albumin, the conventional equilibrium-dialysis reference point
+  var FU_PALETTE = ["#0d6f78","#9a5a06","#9e2437","#2f6b3a","#6b3fa0","#b5651d","#1f6feb","#c2185b"];
+
+  function drugFuList(){
+    // One entry per distinct drug that has a known fu, independent of species pairings.
+    var out = [];
+    GROUPS.forEach(function(g){
+      g.drugSlots.forEach(function(d){
+        var fu = num01(el["fu"+g.id+d].value);
+        if(fu != null) out.push({key:g.id+d, name:drugName(g.id, d), fu:fu});
+      });
+    });
+    lines(el.expDrugs.value).forEach(function(line, i){
+      var p = parseExpDrugLine(line);
+      if(p.fu != null) out.push({key:"x"+(i+1), name:p.name || ("Experimental drug "+(i+1)), fu:p.fu});
+    });
+    return out;
+  }
+
+  // One-site saturable protein binding, closed form (quadratic solution for free drug).
+  // fuRef is the known fu at trace drug concentration and reference albumin FU_PREF (g/L);
+  // Bmax (mg/L) is the assumed total binding-site capacity at FU_PREF, scaled linearly with
+  // albumin concentration for any other albumin level P (g/L).
+  function fuModel(D, P, fuRef, Bmax){
+    var fr = Math.min(Math.max(fuRef, 0), 0.999999);
+    var Kd = fr * Bmax / (1 - fr);
+    if(!isFinite(Kd) || Kd < 0) Kd = 0;
+    var BmaxP = Bmax * (P / FU_PREF);
+    var b = Kd + BmaxP - D;
+    var free = (-b + Math.sqrt(b*b + 4*D*Kd)) / 2;
+    free = Math.max(0, Math.min(D, free));
+    return D > 0 ? free / D : Kd / (Kd + BmaxP);
+  }
+
+  function feConfig(){
+    var min = num(el.feMin.value) || 0.03;
+    var max = num(el.feMax.value) || 64;
+    if(max <= min) max = min * 100;
+    var bmax = num(el.feBmax.value) || 30;
+    var albs = parseNumList(el.feAlbList.value);
+    if(!albs.length) albs = [0, FU_PREF];
+    return {min:min, max:max, bmax:bmax, albs:albs};
+  }
+
+  function fuLogPoints(min, max, n){
+    var lo = Math.log(min), hi = Math.log(max);
+    var pts = [];
+    for(var i=0;i<=n;i++){ pts.push(Math.exp(lo + (hi-lo)*i/n)); }
+    return pts;
+  }
+
+  function fuChart(drug, fuRef, cfg){
+    var W=380, H=210, padL=32, padR=10, padT=12, padB=26;
+    var iw=W-padL-padR, ih=H-padT-padB;
+    var xs = fuLogPoints(cfg.min, cfg.max, 48);
+    var lox = Math.log(cfg.min), hix = Math.log(cfg.max);
+    var x = function(v){ return padL + iw*(Math.log(v)-lox)/(hix-lox); };
+    var y = function(v){ return padT + ih*(1-v); };
+
+    var s = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Fraction unbound vs concentration for '+esc(drug)+'">';
+    [0,0.25,0.5,0.75,1].forEach(function(v){
+      s += '<line x1="'+padL+'" y1="'+y(v).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(v).toFixed(1)+
+           '" stroke="'+(v===0?"var(--ink-3)":"var(--line)")+'" stroke-width="1"'+(v===0?'':' stroke-dasharray="3 3"')+'/>';
+      s += '<text x="'+(padL-6)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end" fill="var(--ink-3)" '+
+           'font-family="IBM Plex Mono, monospace" font-size="9.5">'+v.toFixed(2)+'</text>';
+    });
+    [cfg.min, cfg.max].forEach(function(v, i){
+      s += '<text x="'+(i===0?x(v)+2:x(v)-2).toFixed(1)+'" y="'+(H-padB+15)+'" '+
+           'text-anchor="'+(i===0?"start":"end")+'" fill="var(--ink-3)" '+
+           'font-family="IBM Plex Mono, monospace" font-size="9.5">'+fmt(v,v<1?2:0)+'</text>';
+    });
+    cfg.albs.forEach(function(P, ai){
+      var color = FU_PALETTE[ai % FU_PALETTE.length];
+      var d = xs.map(function(D, i){
+        var fu = fuModel(D, P, fuRef, cfg.bmax);
+        return (i===0?"M":"L")+x(D).toFixed(1)+" "+y(fu).toFixed(1);
+      }).join(" ");
+      s += '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2"/>';
+    });
+    s += '<text x="8" y="'+(padT+8)+'" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace" '+
+         'font-size="10">fu vs drug conc. (mg/L, log scale)</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function renderFuExplorer(){
+    var cfg = feConfig();
+    var drugs = drugFuList();
+
+    document.getElementById("feKey").innerHTML = cfg.albs.map(function(P, i){
+      return '<span><i class="swatch" style="background:'+FU_PALETTE[i % FU_PALETTE.length]+'"></i>'+
+        (P<=0 ? "No albumin" : fmt(P,0)+" g/L albumin")+'</span>';
+    }).join("");
+
+    var chartsEl = document.getElementById("feCharts");
+    if(!drugs.length){
+      chartsEl.innerHTML = '';
+      document.getElementById("feTableWrap").innerHTML =
+        '<p class="note" style="padding:14px;">No drug has a known fu yet &mdash; enter one in section 1 (control drugs) or add ", fu" after an experimental drug name.</p>';
+      return;
+    }
+    chartsEl.innerHTML = drugs.map(function(dr){
+      return '<div class="plotcard"><h3>'+esc(dr.name)+'<span class="sub" style="margin-left:auto;">fu&#8320; = '+fmt(dr.fu,2)+'</span></h3>'+
+        '<div class="sub">reference: '+FU_PREF+' g/L human albumin, trace concentration</div>'+
+        '<div class="chartbox">'+fuChart(dr.name, dr.fu, cfg)+'</div>'+
+        '</div>';
+    }).join("");
+
+    var mid = Math.sqrt(cfg.min * cfg.max);
+    var rows = [];
+    drugs.forEach(function(dr){
+      cfg.albs.forEach(function(P, ai){
+        var fu = fuModel(mid, P, dr.fu, cfg.bmax);
+        rows.push('<tr><td>'+esc(dr.name)+'</td><td>'+(P<=0?"None":fmt(P,0))+'</td>'+
+          '<td>'+fmt(fu,3)+'</td><td>'+fmt(1/Math.max(fu,1e-6),2)+'&times;</td></tr>');
+      });
+    });
+    document.getElementById("feTableWrap").innerHTML =
+      '<table><thead><tr><th>Drug</th><th>Albumin (g/L)</th><th>Predicted fu at '+fmt(mid,2)+
+      ' mg/L</th><th>Predicted MIC fold shift (1/fu)</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
+  }
+
   // ---------- persistence ----------
   function save(){
     try{
+
       var o = {names:{}, enabled:enabled, conc:conc, pre:pre};
       NAME_IDS.forEach(function(k){
         o.names[k] = el[k].value;
@@ -970,7 +1121,7 @@
       document.getElementById("shiftVerdicts").innerHTML =
         verdict("ok","Awaiting data",partialControls
           ? "Control MIC values are present, but no control/condition pair is complete yet &mdash; enter at least one condition MIC to compute a shift."
-          : "No MIC values recorded yet &mdash; enter results in section 3 or use \u201cFill with simulated demo values\u201d to preview the figures.");
+          : "No MIC values recorded yet &mdash; enter results in section 4 or use \u201cFill with simulated demo values\u201d to preview the figures.");
       return;
     }
     if(!flags.length){
@@ -1121,7 +1272,7 @@
               return '<td>'+(c===""?'<span style="color:var(--ink-3)">\u2014</span>':esc(c))+'</td>';
             }).join("")+'</tr>';
           }).join("")
-        : '<tr><td colspan="'+sp.fields.length+'" style="color:var(--ink-3)">No rows yet \u2014 record some results in section 3.</td></tr>';
+        : '<tr><td colspan="'+sp.fields.length+'" style="color:var(--ink-3)">No rows yet \u2014 record some results in section 4.</td></tr>';
       return '<div class="figtab">'+
         '<div class="caption"><h3>'+sp.title+'</h3><p>'+(sp.note||"")+'</p>'+
         '<button type="button" class="copybtn" data-copy="'+sp.name+'">Copy TSV</button></div>'+
@@ -1496,6 +1647,7 @@
     renderEntryStatus();
     renderCharts(C, fold);
     renderVerdicts(C, fold);
+    renderFuExplorer();
     var specs = tableSpecs(C, fold);
     renderFigTables(specs);
     CUR = {C:C, fold:fold, specs:specs};
@@ -1510,6 +1662,7 @@
     renderEntryStatus();
     renderCharts(C, fold);
     renderVerdicts(C, fold);
+    renderFuExplorer();
     var specs = tableSpecs(C, fold);
     renderFigTables(specs);
     CUR = {C:C, fold:fold, specs:specs};
@@ -1521,6 +1674,9 @@
     el[k].addEventListener("input", run);
   });
   el.setupMode.addEventListener("change", run);
+  ["feMin","feMax","feBmax","feAlbList"].forEach(function(k){
+    el[k].addEventListener("input", function(){ save(); renderFuExplorer(); });
+  });
   ["preHuman","preMouse","preWithAlbumin","preWithoutAlbumin"].forEach(function(k){
     document.getElementById(k).addEventListener("change", function(){
       pre.human = document.getElementById("preHuman").checked;
