@@ -575,9 +575,9 @@
     var out = [], seen = {};
     String(v||"").split(/[,\s]+/).forEach(function(t){
       if(!t) return;
-      var n = parseFloat(t);
+      var n = Math.round(parseFloat(t) * 1000000) / 1000000;
       if(!isFinite(n) || n < 0) return;
-      var k = n.toString();
+      var k = n.toFixed(6);
       if(seen[k]) return;
       seen[k] = true;
       out.push(n);
