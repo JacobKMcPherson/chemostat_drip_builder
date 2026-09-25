@@ -92,6 +92,11 @@
   .lede{color:var(--ink-2);max-width:62ch;margin-top:10px;}
   .lede code{font-family:"IBM Plex Mono",monospace;font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
 
+  .sitenav{display:flex;flex-wrap:wrap;gap:8px 16px;font-family:"IBM Plex Mono",monospace;font-size:12px;}
+  .sitenav a{color:var(--ink-3);text-decoration:none;border-bottom:1px solid transparent;}
+  .sitenav a:hover{color:var(--accent);border-color:var(--accent);}
+  .sitenav a[aria-current="page"]{color:var(--accent);border-color:var(--accent);}
+
   section{margin-top:34px;}
   h2{font-size:19px;font-weight:600;letter-spacing:-.01em;}
   .sechead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:12px;}
@@ -271,6 +276,11 @@
 <body>
 
 <div class="wrap">
+
+  <nav class="sitenav" aria-label="Site">
+    <a href="index.html" aria-current="page">Drip Schedule Builder</a>
+    <a href="mic-shift-assay.html">MIC Shift Assay Builder</a>
+  </nav>
 
   <header>
     <div class="eyebrow">Fed-batch PK simulation · no outflow</div>

@@ -1,8 +1,14 @@
 # Drip Schedule Builder
 
-A single-page bench calculator that turns a **measured** gravity drip rate into a duty-cycle
-dosing schedule, reproducing one-compartment pharmacokinetics in a fed-batch culture vessel
-that has no outflow.
+This repo hosts two static, dependency-free bench calculators served from GitHub Pages:
+
+- **[Drip Schedule Builder](index.html)** — a bench calculator that turns a **measured** gravity
+  drip rate into a duty-cycle dosing schedule, reproducing one-compartment pharmacokinetics in a
+  fed-batch culture vessel that has no outflow. Documented below.
+- **[MIC Shift Assay Builder](mic-shift-assay.html)** — a broth microdilution MIC shift assay
+  builder: four antibiotics across six bacterial species (2 drugs x 3 species, twice), testing the
+  influence of physiologic human/mouse serum albumin and human/mouse serum on MIC. Documented in
+  its own section below.
 
 Live site: <https://jacobkmcpherson.github.io/chemostat_drip_builder/>
 
@@ -192,10 +198,75 @@ linearly.
 - The nominal half-life is a target, not a result. Pull samples at peak and at 1–2
   half-lives, assay them, fit the actual `k`, and report the measured value.
 
+# MIC Shift Assay Builder
+
+A second page — [`mic-shift-assay.html`](mic-shift-assay.html) — for designing and recording a
+**broth microdilution MIC shift assay**: four antibiotics tested across six bacterial species,
+split into two panels of two drugs against three species each (2-for-3, 2-for-3), asking how much
+physiologic **human and mouse serum albumin**, and whole **human and mouse serum**, move each MIC
+relative to a plain cation-adjusted Mueller-Hinton broth (CAMHB) control.
+
+## Assay design
+
+Each of the 4 drugs is read against its panel's 3 species by conventional two-fold broth
+microdilution, giving 12 baseline drug–species MICs. Drug and species names, and the physiologic
+concentrations below, are all editable — the defaults simply illustrate a spread of published
+protein-binding fractions (a near-zero-binding and a moderately-bound agent per panel) so the
+demo data show a range of shift sizes.
+
+## Selecting assay criteria
+
+Section 2 lets you tick or untick each additive condition and set its concentration:
+
+| Condition | Default | Note |
+|---|---|---|
+| Human serum albumin (HSA) | 40 g/L | Physiologic human serum albumin is ~35–50 g/L |
+| Mouse serum albumin (MSA) | 30 g/L | Mouse serum albumin runs a little lower, ~25–35 g/L |
+| Human serum | 50% v/v | A readable compromise; some protocols use 90–100% |
+| Mouse serum | 50% v/v | Matched to the human-serum percentage for comparability |
+
+Unticking a condition removes its column from data entry, its bars from the figures, and its rows
+from the export — the control MIC is always recorded, since it is the denominator for every
+fold-shift calculation.
+
+## Real-time figures and the 4-fold rule
+
+MIC results are entered as plain mg/L values in section 3; every figure, verdict, and table
+downstream recomputes immediately, including while you type. Fold shift is
+
+```text
+fold_change      = MIC(condition) / MIC(control)
+log2_fold_change = log2(fold_change)
+```
+
+plotted per drug as a grouped bar chart across its three species. A shift is flagged only once it
+clears `|log2_fold_change| >= 2` — a 4-fold change, or two doubling dilutions — because broth
+microdilution's own two-fold resolution means a single well of noise is already a 2-fold
+difference; four-fold is the conventional bar for a change distinguishable from that noise rather
+than a formal statistical test.
+
+## FAIR data package
+
+Like the drip scheduler, the export is a [Frictionless Data
+Package](https://datapackage.org/standard/data-package/): a ZIP of UTF-8 CSVs plus
+`datapackage.json`, `README.md`, `CITATION.cff`, and `LICENSE.txt` (CC BY 4.0), written by the
+same dependency-free store-only ZIP writer.
+
+| File | Contents |
+|---|---|
+| `data/assay_design.csv` | Every drug–species pairing and its group |
+| `data/test_conditions.csv` | Every condition tested, its concentration, and whether it was enabled |
+| `data/mic_results.csv` | Every recorded MIC, one row per combination × condition |
+| `data/fold_shift.csv` | Fold and log2 fold shift versus control, with the 4-fold interpretation |
+
+As with the drip scheduler, a demo filler is provided to preview the pipeline; it sets the same
+`contains_simulated_values` flag in `datapackage.json` and at the top of the package `README.md`
+so simulated values cannot quietly pass as measured data.
+
 ## Deploying
 
-Static single file, no build step and no dependencies beyond Google Fonts. `index.html` sits
-at the repo root, so GitHub Pages serves it directly.
+Both pages are static single files, no build step and no dependencies beyond Google Fonts, and
+both sit at the repo root, so GitHub Pages serves them directly.
 
 1. **Settings → Pages → Source: GitHub Actions.**
 2. Push to `main`. The workflow in `.github/workflows/pages.yml` uploads the repo root and
