@@ -1,6 +1,6 @@
 # Drip Schedule Builder
 
-This repo hosts two static, dependency-free bench calculators served from GitHub Pages:
+This repo hosts three static, dependency-free bench calculators served from GitHub Pages:
 
 - **[Drip Schedule Builder](index.html)** — a bench calculator that turns a **measured** gravity
   drip rate into a duty-cycle dosing schedule, reproducing one-compartment pharmacokinetics in a
@@ -9,6 +9,11 @@ This repo hosts two static, dependency-free bench calculators served from GitHub
   builder: four antibiotics across six bacterial species (2 drugs x 3 species, twice), testing the
   influence of physiologic human/mouse serum albumin and human/mouse serum on MIC, plus a real-time
   fraction-unbound-vs-concentration explorer. Documented in its own section below.
+- **[Plate Prep Builder](plate-prep-builder.html)** — an interactive 96/384-well plate preparation
+  tool: serial log (addition) or half-log (transfer) dilution series, 2D single-sample or
+  3D/blocked layouts (including a 6-block 384-well design), a fixed 16-/12-channel plus adjustable
+  P20 pipette fleet, a real-time plate view, and well-by-well sample recording. Documented in its
+  own section below.
 
 Live site: <https://jacobkmcpherson.github.io/chemostat_drip_builder/>
 
@@ -292,10 +297,66 @@ As with the drip scheduler, a demo filler is provided to preview the pipeline; i
 `contains_simulated_values` flag in `datapackage.json` and at the top of the package `README.md`
 so simulated values cannot quietly pass as measured data.
 
+# Plate Prep Builder
+
+A third page — [`plate-prep-builder.html`](plate-prep-builder.html) — for designing and recording a
+**96- or 384-well dilution series** on the bench, with a real-time plate view and well-by-well
+sample recording.
+
+## Plate layout
+
+Choose a **96-well (8×12)** or **384-well (16×24)** plate, then a **2D** layout (the whole plate is
+one sample) or a **3D / blocked** layout where row and column divisor counts split the plate into
+several equal blocks, one block per sample — for example 2 row-blocks × 3 column-blocks on a
+384-well plate gives the classic **6 blocks of 8×8 wells**. The dilution series can run across
+columns or down rows within each block, with the other axis as replicates, and an optional last
+series position can be reserved as a no-stock blank/control well.
+
+## Dilution modes
+
+- **Serial log by addition** — every well is spiked independently from a single stock and diluent,
+  with no well-to-well carryover: `stock_volume = well_volume * concentration / stock_concentration`,
+  `diluent_volume = well_volume - stock_volume`.
+- **Half-log / serial by transfer** — the classic carryover technique, generalized to any dilution
+  factor: `transfer_volume = well_volume / (dilution_factor - 1)`; well 1 is filled with a
+  premixed top-concentration working stock, and each subsequent well is pre-filled with diluent
+  then receives the transfer volume from the previous well.
+
+Presets set a sensible factor and mode (10× addition, 3.1623× half-log transfer, or classic 2×
+transfer), but the factor and mode stay independently editable afterward.
+
+## Pipette fleet
+
+Three configurable pipettes, each with an editable min/max volume range: a **16-channel P100**
+(384-well pitch), a **12-channel P100** (96-well pitch), and an **adjustable-spacing P20** (Vmax
+300 µL, usable across 96-well, 384-well, or 8-tube-strip pitch). Every generated prep step gets a
+recommended pipette based on its critical volume, and an optional toggle documents preparing the
+series in an 8-tube strip before transferring it to the plate.
+
+## Real-time plate and recording
+
+Section 3 renders the plate as an SVG, shading wells by concentration on a log scale; clicking a
+well shows its block, step, volumes, and recommended pipette, and lets you type a recorded value
+and notes immediately. Section 6 exposes the same recording fields as a scrollable per-well table.
+Both update the FAIR export immediately, and a demo filler/clear pair lets you preview the pipeline
+with simulated values (flagged `contains_simulated_values`, exactly like the other two pages).
+
+## FAIR data package
+
+The same dependency-free, store-only ZIP writer and Frictionless Data Package format as the other
+two pages:
+
+| File | Contents |
+|---|---|
+| `data/protocol_parameters.csv` | Every plate, layout, dilution, and pipette parameter for the run |
+| `data/plate_design.csv` | Per-well block, step, concentration, volumes, and recommended pipette |
+| `data/prep_steps.csv` | One row per dilution-series step, with the volume/pipette/scope to repeat |
+| `data/sample_values.csv` | Per-well sample label, recorded value, and notes |
+
 ## Deploying
 
-Both pages are static single files, no build step and no dependencies beyond Google Fonts, and
-both sit at the repo root, so GitHub Pages serves them directly.
+All three pages are static single files, no build step and no dependencies beyond Google Fonts, and
+all sit at the repo root, so GitHub Pages serves them directly.
 
 1. **Settings → Pages → Source: GitHub Actions.**
 2. Push to `main`. The workflow in `.github/workflows/pages.yml` uploads the repo root and
