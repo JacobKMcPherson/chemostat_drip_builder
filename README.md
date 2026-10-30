@@ -1,6 +1,6 @@
 # Drip Schedule Builder
 
-This repo hosts three static, dependency-free bench calculators served from GitHub Pages:
+This repo hosts four static, dependency-free bench calculators served from GitHub Pages:
 
 - **[Drip Schedule Builder](index.html)** — a bench calculator that turns a **measured** gravity
   drip rate into a duty-cycle dosing schedule, reproducing one-compartment pharmacokinetics in a
@@ -14,6 +14,11 @@ This repo hosts three static, dependency-free bench calculators served from GitH
   3D/blocked layouts (including a 6-block 384-well design), a fixed 16-/12-channel plus adjustable
   P20 pipette fleet, a real-time plate view, and well-by-well sample recording. Documented in its
   own section below.
+- **[Checkerboard Titration Builder](checkerboard-builder.html)** — a dedicated six-block 8x8
+  X-Y(-Z) combination/checkerboard titration builder for a 384-well plate: fixed-Z or variable-Z
+  designs, a 2-fold or ~3.167-fold (half-log) strip dilution recipe, per-factor working-stock
+  preparation from a starting stock with µg/mL &harr; µM switching by molecular weight, a real-time
+  plate view, and well-by-well recording. Documented in its own section below.
 
 Live site: <https://jacobkmcpherson.github.io/chemostat_drip_builder/>
 
@@ -353,9 +358,71 @@ two pages:
 | `data/prep_steps.csv` | One row per dilution-series step, with the volume/pipette/scope to repeat |
 | `data/sample_values.csv` | Per-well sample label, recorded value, and notes |
 
+# Checkerboard Titration Builder
+
+A fourth page — [`checkerboard-builder.html`](checkerboard-builder.html) — for designing and
+recording the recommended **six-block 8x8 X-Y(-Z) checkerboard** on a 384-well plate: seven
+nonzero concentrations of **X** crossed with seven nonzero concentrations of **Y**, plus a zero
+control on each axis, in every one of six 8x8 blocks (rows A-H/I-P x columns 1-8/9-16/17-24).
+
+## Scheme and recipe
+
+- **Fixed Z** — all six blocks share one Z concentration (six technical replicates of the X-Y
+  checkerboard), with the Z working solution combined 2x with the common assay mixture in a 20 µL
+  addition.
+- **Variable Z** — each block is assigned one of six Z levels (five nonzero, geometrically spaced
+  by the same dilution factor, plus one Z-free block), added as its own 10 µL 4x addition alongside
+  a separate 10 µL common assay mixture addition.
+- **Minimal** — a 30 µL well of 10 µL each of 3x X, 3x Y, and 3x Z, with no separate common-mixture
+  addition; Z can still be fixed or variable.
+
+Every scheme uses the same strip dilution recipe, chosen as **2-fold** (simplest pipetting, 64-fold
+range) or **~3.167-fold** (`19/6`, approximately half-log, ~1000-fold range over the same seven
+positive levels).
+
+## Factor concentrations and working-stock preparation
+
+Each of X, Y, and Z has its own top (block-1) final concentration, unit (µg/mL or µM, interconverted
+live using an optional molecular weight), and starting/source stock concentration and unit. From
+those, the page computes:
+
+- the per-axis concentration ladder (`C_max`, `C_max/r`, ..., `C_max/r^6`, `0` for X/Y; five nonzero
+  levels plus zero across the six blocks for a variable Z);
+- the volume of 4x/3x/2x working solution required (six strip tube-1 fills for X/Y, the Z1 strip's
+  eight tubes for a variable Z, or a whole-plate reservoir for a fixed Z), by simple dilution
+  (`V1*C1 = V2*C2`) from the starting stock, with mass &harr; molar conversion via molecular weight
+  when the source stock is recorded in the other unit, plus a user-set overage percentage;
+- the strip tube-by-tube recipe (tube 1 fill, tubes 2-7/8 diluent, transfer volume, discard volume)
+  for the chosen dilution factor;
+- every ordered bench step — strip fills, serial dilutions, plate additions — with its volume and
+  recommended pipette (adjustable 8-channel P20 for strips and per-block addition, 12-channel P100
+  for serial/strip-to-strip dilution, 16-channel P100 for whole-column reservoir additions).
+
+## Live plate and recording
+
+The 384-well plate is rendered as an SVG shaded from the most concentrated corner of each block
+(top-left) to the X=Y=0 corner (bottom-right, shown blank); clicking a well shows its block and
+X/Y/Z concentrations and lets you record a value and notes immediately, exactly like the Plate Prep
+Builder. A demo filler/clear pair previews the pipeline with simulated values.
+
+## FAIR data package
+
+The same dependency-free, store-only ZIP writer and Frictionless Data Package format as the other
+pages:
+
+| File | Contents |
+|---|---|
+| `data/protocol_parameters.csv` | Scheme, recipe, and every per-factor parameter for the run |
+| `data/concentration_ladders.csv` | The X, Y, and per-block Z concentration ladder |
+| `data/working_stock_prep.csv` | Per-factor working-stock dilution from its starting stock |
+| `data/strip_prep.csv` | Per-strip tube-fill and transfer volumes for the chosen recipe |
+| `data/plate_design.csv` | Per-well block and final X/Y/Z concentrations |
+| `data/prep_steps.csv` | Every ordered bench step, its volume, and recommended pipette |
+| `data/sample_values.csv` | Per-well sample label, recorded value, and notes |
+
 ## Deploying
 
-All three pages are static single files, no build step and no dependencies beyond Google Fonts, and
+All four pages are static single files, no build step and no dependencies beyond Google Fonts, and
 all sit at the repo root, so GitHub Pages serves them directly.
 
 1. **Settings → Pages → Source: GitHub Actions.**

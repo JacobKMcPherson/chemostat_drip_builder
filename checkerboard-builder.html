@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Interactive six-block 8x8 X-Y(-Z) checkerboard titration builder for a 384-well plate: fixed-Z or variable-Z designs, 2-fold or ~3.167-fold (half-log) X/Y/Z strip dilution recipes, per-factor working-stock preparation from a starting stock with ug/mL/uM switching by molecular weight, real-time plate visualization, well-by-well recording, and a downloadable FAIR data package."
+<meta name="color-scheme" content="light dark">
+<style>
+  :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  body{margin:0;font-family:system-ui,sans-serif;background:#eef1f0;}
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+</style>
+<title>Checkerboard Titration Builder</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#eef1f0;
+    --surface:#ffffff;
+    --surface-2:#f6f8f7;
+    --line:#d3dbd9;
+    --line-strong:#b3bfbc;
+    --ink:#141d21;
+    --ink-2:#48585d;
+    --ink-3:#74858a;
+    --accent:#0d6f78;
+    --accent-soft:#d9ecee;
+    --warn:#9a5a06;
+    --warn-soft:#f8ecd9;
+    --bad:#9e2437;
+    --bad-soft:#f8e2e5;
+    --good:#2f6b3a;
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0c1214;
+      --surface:#141d21;
+      --surface-2:#1a252a;
+      --line:#27353a;
+      --line-strong:#3b4d53;
+      --ink:#e4ecea;
+      --ink-2:#a6b6b8;
+      --ink-3:#7c8d90;
+      --accent:#4cc0c9;
+      --accent-soft:#12383c;
+      --warn:#e2a049;
+      --warn-soft:#3a2c14;
+      --bad:#e88293;
+      --bad-soft:#3a1b21;
+      --good:#7dc08a;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0c1214;
+    --surface:#141d21;
+    --surface-2:#1a252a;
+    --line:#27353a;
+    --line-strong:#3b4d53;
+    --ink:#e4ecea;
+    --ink-2:#a6b6b8;
+    --ink-3:#7c8d90;
+    --accent:#4cc0c9;
+    --accent-soft:#12383c;
+    --warn:#e2a049;
+    --warn-soft:#3a2c14;
+    --bad:#e88293;
+    --bad-soft:#3a1b21;
+    --good:#7dc08a;
+  }
+
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"Archivo", ui-sans-serif, system-ui, sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;}
+  h1,h2,h3{text-wrap:balance;margin:0;}
+  .eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  h1{font-size:clamp(26px,5vw,38px);font-weight:700;letter-spacing:-.02em;margin-top:6px;}
+  .lede{color:var(--ink-2);max-width:66ch;margin-top:10px;}
+  .lede code{font-family:"IBM Plex Mono",monospace;font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
+
+  .sitenav{display:flex;flex-wrap:wrap;gap:8px 16px;font-family:"IBM Plex Mono",monospace;font-size:12px;}
+  .sitenav a{color:var(--ink-3);text-decoration:none;border-bottom:1px solid transparent;}
+  .sitenav a:hover{color:var(--accent);border-color:var(--accent);}
+  .sitenav a[aria-current="page"]{color:var(--accent);border-color:var(--accent);}
+
+  section{margin-top:34px;}
+  h2{font-size:19px;font-weight:600;letter-spacing:-.01em;}
+  .sechead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:12px;}
+  .sechead p{margin:0;color:var(--ink-3);font-size:13px;}
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .panel + .panel{margin-top:14px;}
+
+  /* ---- inputs ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media (max-width:760px){ .grid3{grid-template-columns:1fr;} }
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:12px;color:var(--ink-2);font-weight:500;}
+  .field .unit{color:var(--ink-3);font-weight:400;}
+  .field input,.field select,.field textarea{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:15px;font-weight:500;
+    background:var(--surface-2);
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:8px 9px;
+    width:100%;
+    min-width:0;
+  }
+  .field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible,button:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+  .field textarea{min-height:66px;resize:vertical;}
+  .hint{font-size:11.5px;color:var(--ink-3);line-height:1.35;}
+  .checkfield{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);}
+  .checkfield input{width:16px;height:16px;accent-color:var(--accent);}
+
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;
+    background:transparent;color:var(--ink-2);
+    border:1px solid var(--line);border-radius:999px;
+    padding:3px 10px;cursor:pointer;
+  }
+  .presets button:hover{border-color:var(--accent);color:var(--accent);}
+
+  .grouphead{
+    display:flex;align-items:baseline;gap:9px;margin-bottom:10px;flex-wrap:wrap;
+  }
+  .grouphead h3{font-size:14px;font-weight:600;}
+  .grouphead span{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);}
+
+  /* ---- readout ---- */
+  .readout{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-top:14px;}
+  @media (max-width:620px){ .readout{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:380px){ .readout{grid-template-columns:1fr;} }
+  .stat{background:var(--surface);padding:13px 14px;}
+  .stat dt{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;}
+  .stat dd{margin:4px 0 0;font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+  .stat dd small{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:3px;}
+
+  .verdict{
+    display:flex;gap:11px;align-items:flex-start;
+    border-radius:var(--radius);padding:13px 15px;margin-top:10px;
+    font-size:14px;line-height:1.45;
+    border:1px solid transparent;
+  }
+  .verdict .tag{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+    letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
+    padding-top:2px;
+  }
+  .verdict p{margin:0;}
+  .verdict:first-child{margin-top:0;}
+  .v-ok{background:var(--surface);border-color:var(--line);}
+  .v-ok .tag{color:var(--good);}
+  .v-warn{background:var(--warn-soft);border-color:var(--warn);}
+  .v-warn .tag{color:var(--warn);}
+  .v-bad{background:var(--bad-soft);border-color:var(--bad);}
+  .v-bad .tag{color:var(--bad);}
+
+  /* ---- plate view ---- */
+  .platewrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,1fr);gap:16px;align-items:start;}
+  @media (max-width:760px){ .platewrap{grid-template-columns:1fr;} }
+  .plateshell{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);padding:12px;overflow:auto;}
+  svg.plate{display:block;width:100%;height:auto;}
+  svg.plate .well{cursor:pointer;stroke:var(--line-strong);stroke-width:1;}
+  svg.plate .well:hover{stroke:var(--accent);stroke-width:2;}
+  svg.plate .well.selected{stroke:var(--ink);stroke-width:2.4;}
+  svg.plate .well.blank{fill:var(--surface);}
+  svg.plate text{font-family:"IBM Plex Mono",monospace;fill:var(--ink-3);}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:11.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;margin-top:8px;}
+  .legend .ramp{width:120px;height:10px;border-radius:3px;background:linear-gradient(90deg,#1a252a,var(--accent));border:1px solid var(--line);}
+  .welldetail{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);padding:14px;font-size:13px;}
+  .welldetail h3{font-size:14px;margin-bottom:8px;}
+  .welldetail dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;margin:0 0 10px;}
+  .welldetail dt{color:var(--ink-3);}
+  .welldetail dd{margin:0;color:var(--ink);text-align:right;}
+
+  /* ---- tabs ---- */
+  .tabs{display:flex;gap:6px;margin-bottom:11px;flex-wrap:wrap;}
+  .tabs button{
+    font-family:"Archivo",sans-serif;font-size:13px;font-weight:500;
+    background:var(--surface);color:var(--ink-2);
+    border:1px solid var(--line);border-radius:7px;padding:6px 12px;cursor:pointer;
+  }
+  .tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  /* ---- tables ---- */
+  .tablewrap{overflow-x:auto;max-height:460px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);}
+  table{border-collapse:collapse;width:100%;font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;}
+  thead th{
+    position:sticky;top:0;z-index:1;
+    background:var(--surface-2);
+    text-align:right;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-2);
+    padding:9px 11px;border-bottom:1px solid var(--line-strong);white-space:nowrap;
+  }
+  thead th:first-child,thead th:nth-child(2),thead th:nth-child(3){text-align:left;}
+  tbody td{padding:7px 11px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td:first-child,tbody td:nth-child(2),tbody td:nth-child(3){text-align:left;color:var(--ink-2);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.grouprow td{background:var(--surface-2);color:var(--ink-2);font-weight:600;}
+  tbody td input{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+    background:var(--surface-2);color:var(--ink);
+    border:1px solid var(--line);border-radius:5px;
+    padding:4px 6px;width:96px;text-align:right;
+  }
+  tbody td input.wide{width:150px;}
+  tbody td input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  tbody td input.filled{border-color:var(--accent);}
+  .flagcell{color:var(--bad);font-weight:600;}
+
+  .note{font-size:13px;color:var(--ink-2);line-height:1.55;max-width:74ch;}
+  .note strong{color:var(--ink);font-weight:600;}
+  .note + .note{margin-top:9px;}
+  ol.steps{margin:0;padding-left:20px;font-size:13.5px;color:var(--ink-2);line-height:1.6;}
+  ol.steps li{margin-bottom:7px;}
+  ol.steps li::marker{color:var(--accent);font-family:"IBM Plex Mono",monospace;font-weight:600;}
+  ol.steps strong{color:var(--ink);font-weight:600;}
+  kbd{font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+
+  .eq{
+    font-family:"IBM Plex Mono",monospace;font-size:13px;
+    background:var(--surface-2);border-left:3px solid var(--accent);
+    padding:10px 13px;border-radius:0 7px 7px 0;margin:11px 0;
+    overflow-x:auto;color:var(--ink);
+  }
+
+  .figtab{margin-bottom:22px;}
+  .figtab:last-child{margin-bottom:0;}
+  .figtab .caption{display:flex;flex-wrap:wrap;align-items:baseline;gap:9px;margin-bottom:9px;}
+  .figtab .caption h3{font-size:13.5px;font-weight:600;}
+  .figtab .caption p{margin:0;font-size:12px;color:var(--ink-3);flex:1 1 200px;}
+  .copybtn{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;
+    background:transparent;color:var(--ink-2);
+    border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap;
+  }
+  .copybtn:hover{border-color:var(--accent);color:var(--accent);}
+  .statusmsg{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;margin-top:10px;
+    color:var(--good);
+  }
+  .statusmsg.err{color:var(--bad);}
+
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3);}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <nav class="sitenav" aria-label="Site">
+    <a href="index.html">Drip Schedule Builder</a>
+    <a href="mic-shift-assay.html">MIC Shift Assay Builder</a>
+    <a href="plate-prep-builder.html">Plate Prep Builder</a>
+    <a href="checkerboard-builder.html" aria-current="page">Checkerboard Titration Builder</a>
+  </nav>
+
+  <header>
+    <div class="eyebrow">384-well, six 8&times;8 blocks &middot; X&ndash;Y(&ndash;Z) checkerboard &middot; FAIR export</div>
+    <h1>Checkerboard Titration Builder</h1>
+    <p class="lede">Design the recommended six-block 8&times;8 checkerboard: seven nonzero concentrations of <strong>X</strong> crossed with seven nonzero concentrations of <strong>Y</strong>, plus a zero control on each axis, repeated across six blocks of a 384-well plate at 40&nbsp;&micro;L/well &mdash; either <strong>fixed Z</strong> (six technical replicates at one Z level) or <strong>variable Z</strong> (a different Z level per block), or a minimal 30&nbsp;&micro;L X+Y+Z-only well. Set each factor's top concentration, unit (&micro;g/mL or &micro;M, interconverted by molecular weight), and starting stock, and the page computes the working-stock dilution from that stock, the 2-fold or ~3.167-fold (half-log) strip dilution recipe, and every pipetting step &mdash; then exports it all as a FAIR data package.</p>
+  </header>
+
+  <section>
+    <div class="sechead">
+      <h2>1 &middot; Design &amp; recipe</h2>
+      <p>Fixed at a 384-well plate, six 8&times;8 blocks (rows A&ndash;H / I&ndash;P &times; columns 1&ndash;8 / 9&ndash;16 / 17&ndash;24). Pick the experiment scheme and the strip dilution recipe.</p>
+    </div>
+    <div class="panel">
+      <div class="grid3">
+        <div class="field">
+          <label for="scheme">Experiment scheme</label>
+          <select id="scheme">
+            <option value="fixedZ">Fixed Z &mdash; 6 replicate X&ndash;Y checkerboards, 40&nbsp;&micro;L/well</option>
+            <option value="variableZ">Variable Z &mdash; 1 Z level per block, 40&nbsp;&micro;L/well</option>
+            <option value="minimal">Minimal &mdash; X+Y+Z only, no common mix, 30&nbsp;&micro;L/well</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="recipe">Strip dilution recipe</label>
+          <select id="recipe">
+            <option value="2">2-fold &mdash; simplest pipetting, 64-fold range</option>
+            <option value="half">~3.167-fold (19/6, &asymp; half-log) &mdash; &asymp;1000-fold range</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="zMode">Z assignment <span class="unit">minimal scheme only</span></label>
+          <select id="zMode" disabled>
+            <option value="fixed">Fixed &mdash; same Z in every block</option>
+            <option value="variable">Variable &mdash; one of 6 levels per block</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px;"><label for="commonMixNote">Common assay mixture contents <span class="unit">optional note</span></label><textarea id="commonMixNote" placeholder="e.g. cells + enzyme substrate in assay buffer, 2x for this addition"></textarea></div>
+      <p class="hint" id="schemeHint" style="margin-top:10px;"></p>
+      <div id="schemeVerdicts"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>2 &middot; Factor concentrations</h2>
+      <p>Top (block-1, <code>C<sub>max</sub></code>) final concentration, unit, and optional molecular weight for each factor. Switching the unit auto-converts the top and source-stock concentrations using the molecular weight.</p>
+    </div>
+    <div class="panel">
+      <div hidden>
+        <input id="xCmax" type="number" value="100"><select id="xUnit"><option value="ug/mL">ug/mL</option><option value="uM">uM</option></select>
+        <input id="xMw" type="number" value=""><input id="xSourceConc" type="number" value="10000"><select id="xSourceUnit"><option value="ug/mL">ug/mL</option><option value="uM">uM</option></select>
+        <input id="yCmax" type="number" value="100"><select id="yUnit"><option value="ug/mL">ug/mL</option><option value="uM">uM</option></select>
+        <input id="yMw" type="number" value=""><input id="ySourceConc" type="number" value="10000"><select id="ySourceUnit"><option value="ug/mL">ug/mL</option><option value="uM">uM</option></select>
+        <input id="zCmax" type="number" value="10"><select id="zUnit"><option value="ug/mL">ug/mL</option><option value="uM">uM</option></select>
+        <input id="zMw" type="number" value=""><input id="zSourceConc" type="number" value="1000"><select id="zSourceUnit"><option value="ug/mL">ug/mL</option><option value="uM">uM</option></select>
+      </div>
+      <div class="tablewrap"><div id="factorTableWrap"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>3 &middot; Working stock preparation</h2>
+      <p>How much of each factor's starting (source) stock solution and diluent to combine to make the 4&times;/3&times;/2&times; working solution the strips (or reservoir) are filled from.</p>
+    </div>
+    <div class="panel">
+      <div class="field" style="max-width:220px;"><label for="overagePct">Overage <span class="unit">% extra to prepare</span></label><input id="overagePct" type="number" value="20" min="0" step="1"></div>
+      <div class="panel" style="margin-top:12px;"><div class="tablewrap" id="workingStockTableWrap"></div></div>
+      <div id="stockVerdicts"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>4 &middot; Strip dilution recipe &amp; concentration ladders</h2>
+      <p>Per-tube volumes for the chosen recipe, and the resulting concentration series for X, Y, and Z.</p>
+    </div>
+    <div class="panel">
+      <div class="grouphead"><h3>Tube volumes</h3><span id="recipeLabel"></span></div>
+      <div class="tablewrap"><div id="recipeTableWrap"></div></div>
+    </div>
+    <div class="panel">
+      <div class="grouphead"><h3>Concentration ladders</h3><span>C<sub>max</sub>, C<sub>max</sub>/r, &hellip;, C<sub>max</sub>/r<sup>6</sup>, 0</span></div>
+      <div class="tablewrap"><div id="ladderTableWrap"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>5 &middot; Live plate</h2>
+      <p>384 wells, six 8&times;8 blocks. Shading runs from the most concentrated corner (top-left of each block) to the zero/zero corner (bottom-right). Click a well for its X/Y/Z concentrations, addition volumes, and to record a value.</p>
+    </div>
+    <div class="panel">
+      <div class="platewrap">
+        <div>
+          <div class="plateshell"><div id="plateSvgWrap"></div></div>
+          <div class="legend"><span>High conc.</span><span class="ramp"></span><span>Low conc.</span><span style="margin-left:auto;">Bottom-right of each block = X=Y=0 (Z only)</span></div>
+        </div>
+        <div class="welldetail" id="wellDetail">
+          <p class="note">Click any well to see its block, X/Y/Z concentrations, addition volumes, and to record a value.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>6 &middot; Blocks</h2>
+      <p>One row per block. Z assignment and an optional sample label/notes per block.</p>
+    </div>
+    <div class="panel"><div class="tablewrap" id="blocksTableWrap"></div></div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>7 &middot; Generated prep steps</h2>
+      <p>Ordered bench steps: strip fills, serial dilutions, and plate additions, with volumes and the recommended pipette.</p>
+    </div>
+    <div class="panel"><div class="tablewrap" id="stepsTableWrap"></div></div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>8 &middot; Well-by-well data entry</h2>
+      <p>Enter a recorded value and notes per well. Feeds the FAIR export's <code>sample_values.csv</code>.</p>
+    </div>
+    <div class="panel">
+      <div class="presets">
+        <button type="button" id="demoFill">Fill with simulated demo values</button>
+        <button type="button" id="clearData">Clear recorded data</button>
+      </div>
+      <div class="tablewrap" style="margin-top:12px;" id="wellTableWrap"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>9 &middot; Dataset metadata &amp; FAIR export</h2>
+      <p>Everything above, plus this metadata, is packaged as a Frictionless tabular data package.</p>
+    </div>
+    <div class="panel">
+      <div class="grid3">
+        <div class="field"><label for="mTitle">Run title</label><input id="mTitle" type="text" placeholder="e.g. Drug X / Drug Y synergy, 6-block checkerboard"></div>
+        <div class="field"><label for="mAuthor">Investigator</label><input id="mAuthor" type="text"></div>
+        <div class="field"><label for="mOrcid">ORCID <span class="unit">optional</span></label><input id="mOrcid" type="text" placeholder="0000-0000-0000-0000"></div>
+      </div>
+      <div class="grid3" style="margin-top:12px;">
+        <div class="field"><label for="mOrg">Institution</label><input id="mOrg" type="text"></div>
+        <div class="field"><label for="mRun">Run / plate ID</label><input id="mRun" type="text"></div>
+        <div class="field"><label for="mHypothesis">Hypothesis <span class="unit">optional</span></label><input id="mHypothesis" type="text"></div>
+      </div>
+      <div class="field" style="margin-top:12px;"><label for="mDesc">Description</label><textarea id="mDesc"></textarea></div>
+      <div class="presets" style="margin-top:12px;">
+        <button type="button" id="dlZip">Download FAIR data package (.zip)</button>
+        <button type="button" id="dlJson">Preview datapackage.json</button>
+      </div>
+      <pre id="jsonPreview" hidden style="white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:10px;max-height:320px;overflow:auto;"></pre>
+      <div id="exportStatus"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>10 &middot; Bench procedure</h2>
+      <p>A general run order; the exact volumes and pipettes are generated in sections 3, 4 and 7.</p>
+    </div>
+    <div class="panel">
+      <ol class="steps">
+        <li><strong>Set the scheme and recipe</strong> in section 1, the per-factor concentrations/units/MW in section 2, and the starting stocks/overage in section 3.</li>
+        <li><strong>Prepare the X1&ndash;X6 and Y1&ndash;Y6 strips</strong> (and Z1&ndash;Z6 if Z is variable) with the tube volumes in section 4, arranged side by side in a 96-well-format strip holder so a 12-channel P100 can serially dilute all twelve (or twenty) tubes together, mixing before each transfer and discarding one transfer volume from the last diluted position. Leave the final position (tube 8, or Z6) untouched as the zero/vehicle control.</li>
+        <li><strong>Add X, then Y</strong> with an adjustable 8-channel P20 at 96-well spacing (aspirate) then 384-well spacing (dispense): X across each block's columns 1&ndash;8, Y down each block's rows 1&ndash;8, highest concentration nearest the block's top-left corner.</li>
+        <li><strong>Add Z and/or the common assay mixture</strong> per section 7: fixed Z uses a single 2&times;Z/assay reservoir mix added 20&nbsp;&micro;L/well with a 16-channel P100; variable Z adds 10&nbsp;&micro;L/well from each block's Z strip, then 10&nbsp;&micro;L/well common mixture; the minimal scheme stops after X/Y/Z with no further addition.</li>
+        <li><strong>Replace tips once they have touched well liquid</strong> before returning to any source strip or reservoir, especially while dispensing Y across wells that already contain X.</li>
+        <li><strong>Record values as you read them</strong> in section 8 &mdash; the plate view and export update immediately.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    Checkerboard titration builder: a fixed six-block 8&times;8 X&ndash;Y checkerboard on a 384-well plate (seven nonzero + one zero concentration per axis), with fixed or variable Z across blocks and an optional minimal (X+Y+Z-only) well composition. Strip dilution recipe, working-stock-from-source-stock volumes, and every pipetting step are computed from user-entered concentrations, units, molecular weights, and starting stocks.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SITE = "https://jacobkmcpherson.github.io/chemostat_drip_builder/checkerboard-builder.html";
+  var REPO = "https://github.com/JacobKMcPherson/chemostat_drip_builder";
+
+  var ROWS = 16, COLS = 24, ROW_LABELS = "ABCDEFGHIJKLMNOP";
+  var BLOCK_H = 8, BLOCK_W = 8, ROW_GROUPS = 2, COL_GROUPS = 3, NUM_BLOCKS = 6;
+
+  var DESIGN_IDS = ["scheme","recipe","zMode","commonMixNote","overagePct",
+    "xCmax","xUnit","xMw","xSourceConc","xSourceUnit",
+    "yCmax","yUnit","yMw","ySourceConc","ySourceUnit",
+    "zCmax","zUnit","zMw","zSourceConc","zSourceUnit"];
+  var METAIDS = ["mTitle","mAuthor","mOrcid","mOrg","mRun","mHypothesis","mDesc"];
+  var el = {};
+  DESIGN_IDS.concat(METAIDS).forEach(function(k){ el[k] = document.getElementById(k); });
+
+  var blocks = {};     // blockIndex -> {label, notes}
+  var wellData = {};   // wellId -> {value, notes}
+  var synthetic = false;
+  var selectedWell = null;
+  var CUR = null;
+
+  // ---------- generic helpers ----------
+  function fmt(x, p){
+    if(!isFinite(x)) return "\u2014";
+    return x.toFixed(p==null?2:p);
+  }
+  function nz(v,p){ return (v===null||v===undefined||!isFinite(v)) ? "" : fmt(v,p); }
+  function esc(s){
+    return String(s==null?"":s).replace(/[&<>"]/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];
+    });
+  }
+  function slug(s, fb){
+    var x=(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+    return x || fb;
+  }
+  function num(v, fb){
+    var n = parseFloat(v);
+    return isFinite(n) ? n : (fb==null?null:fb);
+  }
+
+  // ---------- mass <-> molar concentration ----------
+  function unitLabel(u){ return u === "uM" ? "\u00b5M" : "\u00b5g/mL"; }
+  function massToMolar(ugPerML, mw){ return ugPerML * 1000 / mw; }   // ug/mL -> uM
+  function molarToMass(uM, mw){ return uM * mw / 1000; }             // uM -> ug/mL
+  function convertConc(value, fromUnit, toUnit, mw){
+    if(value == null || !isFinite(value)) return NaN;
+    if(fromUnit === toUnit) return value;
+    if(!(mw > 0)) return NaN;
+    if(fromUnit === "ug/mL" && toUnit === "uM") return massToMolar(value, mw);
+    if(fromUnit === "uM" && toUnit === "ug/mL") return molarToMass(value, mw);
+    return NaN;
+  }
+  function status(id, msg, isErr){
+    document.getElementById(id).innerHTML =
+      '<div class="statusmsg'+(isErr?" err":"")+'">'+msg+'</div>';
+  }
+  function csvCell(v){
+    var s = (v===null||v===undefined) ? "" : String(v);
+    return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+  function toCSV(sp){
+    return [sp.fields.map(function(f){ return csvCell(f.name); }).join(",")]
+      .concat(sp.rows.map(function(r){ return r.map(csvCell).join(","); }))
+      .join("\r\n") + "\r\n";
+  }
+
+  // ---------- design ----------
+  function factorField(D, k){ // k = "x" | "y" | "z"
+    return {
+      cmax: num(el[k+"Cmax"].value, 0),
+      unit: el[k+"Unit"].value === "uM" ? "uM" : "ug/mL",
+      mw: num(el[k+"Mw"].value, null),
+      sourceConc: num(el[k+"SourceConc"].value, null),
+      sourceUnit: el[k+"SourceUnit"].value === "uM" ? "uM" : "ug/mL"
+    };
+  }
+
+  function computeDesign(){
+    var scheme = el.scheme.value;
+    var recipeKey = el.recipe.value === "half" ? "half" : "2";
+    var r = recipeKey === "half" ? 19/6 : 2;
+    var zMode = scheme === "fixedZ" ? "fixed" : scheme === "variableZ" ? "variable" : (el.zMode.value === "variable" ? "variable" : "fixed");
+    el.zMode.disabled = (scheme !== "minimal");
+    if(scheme === "fixedZ") el.zMode.value = "fixed";
+    if(scheme === "variableZ") el.zMode.value = "variable";
+
+    var wellVol = scheme === "minimal" ? 30 : 40;
+    var additionVolX = 10, additionVolY = 10;
+    var additionVolZ = (scheme === "fixedZ") ? 20 : 10; // fixedZ: combined 2x Z + assay mix
+    var hasCommonMix = (scheme === "variableZ");         // separate 1x common-mix addition
+    var additionVolCommon = hasCommonMix ? 10 : 0;
+
+    var multX = wellVol / additionVolX;
+    var multY = wellVol / additionVolY;
+    var multZ = wellVol / additionVolZ;
+
+    var overagePct = num(el.overagePct.value, 0);
+
+    var X = factorField(null, "x"), Y = factorField(null, "y"), Z = factorField(null, "z");
+
+    var tube1Vol = recipeKey === "half" ? 152 : 200;
+    var midVol   = recipeKey === "half" ? 104 : 100;
+    var transferVol = recipeKey === "half" ? 48 : 100;
+
+    function ladder8(cmax){
+      var out = [];
+      for(var i=0;i<7;i++) out.push(cmax / Math.pow(r,i));
+      out.push(0);
+      return out;
+    }
+    var xLevels = ladder8(X.cmax);
+    var yLevels = ladder8(Y.cmax);
+
+    var zBlockConc; // array length 6, final Z concentration per block
+    if(zMode === "fixed"){
+      zBlockConc = [0,1,2,3,4,5].map(function(){ return Z.cmax; });
+    } else {
+      var zl = [];
+      for(var j=0;j<5;j++) zl.push(Z.cmax / Math.pow(r,j));
+      zl.push(0);
+      zBlockConc = zl;
+    }
+
+    return {
+      scheme:scheme, recipeKey:recipeKey, r:r, zMode:zMode,
+      wellVol:wellVol, additionVolX:additionVolX, additionVolY:additionVolY, additionVolZ:additionVolZ,
+      hasCommonMix:hasCommonMix, additionVolCommon:additionVolCommon,
+      multX:multX, multY:multY, multZ:multZ,
+      overagePct:overagePct, X:X, Y:Y, Z:Z,
+      tube1Vol:tube1Vol, midVol:midVol, transferVol:transferVol,
+      xLevels:xLevels, yLevels:yLevels, zBlockConc:zBlockConc,
+      numBlocks:NUM_BLOCKS, blockHeight:BLOCK_H, blockWidth:BLOCK_W,
+      numWells: ROWS*COLS,
+      commonMixNote: el.commonMixNote.value || ""
+    };
+  }
+
+  function blockLabel(bi){ return "Block "+(bi+1); }
+
+  function wells(D){
+    var out = [];
+    for(var r=0;r<ROWS;r++){
+      for(var c=0;c<COLS;c++){
+        var rowGroup = Math.floor(r / BLOCK_H), colGroup = Math.floor(c / BLOCK_W);
+        var bi = rowGroup*COL_GROUPS + colGroup;
+        var localRow = r % BLOCK_H, localCol = c % BLOCK_W;
+        var id = ROW_LABELS[r] + (c+1);
+        out.push({
+          id:id, row:r, col:c, block:bi,
+          xIdx:localCol, yIdx:localRow,
+          xConc: D.xLevels[localCol], yConc: D.yLevels[localRow], zConc: D.zBlockConc[bi],
+          isCorner: (localCol===7 && localRow===7)
+        });
+      }
+    }
+    return out;
+  }
+
+  // ---------- working stock (V1*C1 = V2*C2, mass<->molar via MW) ----------
+  function stockPrep(targetConc, targetUnit, prepVolume, factor){
+    var sourceConc = factor.sourceConc, sourceUnit = factor.sourceUnit, mw = factor.mw;
+    var prepVol = prepVolume * (1 + (num(el.overagePct.value,0)||0)/100);
+    if(!(sourceConc > 0) || !(targetConc > 0) || !(prepVolume > 0)){
+      return {prepVol:prepVol, sourceVol:null, diluentVol:null, valid:false, reason:"Enter a starting stock concentration."};
+    }
+    var targetInSourceUnits = targetConc;
+    if(sourceUnit !== targetUnit){
+      targetInSourceUnits = convertConc(targetConc, targetUnit, sourceUnit, mw);
+      if(!isFinite(targetInSourceUnits)) return {prepVol:prepVol, sourceVol:null, diluentVol:null, valid:false, reason:"Enter a molecular weight to convert "+unitLabel(targetUnit)+" \u2192 "+unitLabel(sourceUnit)+"."};
+    }
+    if(sourceConc < targetInSourceUnits){
+      return {prepVol:prepVol, sourceVol:null, diluentVol:null, valid:false, reason:"Starting stock ("+fmt(sourceConc,4)+" "+unitLabel(sourceUnit)+") is more dilute than the working solution needed ("+fmt(targetInSourceUnits,4)+" "+unitLabel(sourceUnit)+")."};
+    }
+    var sourceVol = prepVol * targetInSourceUnits / sourceConc;
+    var diluentVol = prepVol - sourceVol;
+    return {prepVol:prepVol, sourceVol:sourceVol, diluentVol:diluentVol, valid:true, targetInSourceUnits:targetInSourceUnits};
+  }
+
+  function workingStockPlan(D){
+    var plan = {};
+    // X, Y: 6 strips, tube1 of each filled with tube1Vol of the 4x/3x top working solution
+    var xTarget = D.X.cmax * D.multX;
+    var yTarget = D.Y.cmax * D.multY;
+    plan.X = { targetConc:xTarget, unit:D.X.unit, requiredVol: NUM_BLOCKS*D.tube1Vol, prep: stockPrep(xTarget, D.X.unit, NUM_BLOCKS*D.tube1Vol, D.X) };
+    plan.Y = { targetConc:yTarget, unit:D.Y.unit, requiredVol: NUM_BLOCKS*D.tube1Vol, prep: stockPrep(yTarget, D.Y.unit, NUM_BLOCKS*D.tube1Vol, D.Y) };
+
+    if(D.zMode === "variable"){
+      var zTarget = D.Z.cmax * D.multZ;
+      var reqVol = 8*D.tube1Vol; // Z1 strip only: 8 tubes, each needs the full top working solution
+      plan.Z = { targetConc:zTarget, unit:D.Z.unit, requiredVol: reqVol, prep: stockPrep(zTarget, D.Z.unit, reqVol, D.Z), mode:"variable" };
+    } else {
+      var zTargetFixed = D.Z.cmax * D.multZ;
+      var reqVolFixed = D.numWells * D.additionVolZ; // whole-plate reservoir (combined with common mix if fixedZ scheme)
+      plan.Z = { targetConc:zTargetFixed, unit:D.Z.unit, requiredVol: reqVolFixed, prep: stockPrep(zTargetFixed, D.Z.unit, reqVolFixed, D.Z), mode:"fixed" };
+    }
+    return plan;
+  }
+
+  // ---------- rendering ----------
+  function logColor(score){ // score 0..14 (xIdx'+yIdx' where higher=more concentrated)
+    var t = Math.max(0, Math.min(1, score/14));
+    var c1=[26,37,42], c2=[12,111,120];
+    var rgb = c1.map(function(a,i){ return Math.round(a + (c2[i]-a)*t); });
+    return "rgb("+rgb.join(",")+")";
+  }
+
+  function renderPlate(D, W){
+    var cw=22, ch=22, padL=28, padT=20, gapBlock=10;
+    var svgW = padL + COLS*cw + (COL_GROUPS-1)*gapBlock + 10;
+    var svgH = padT + ROWS*ch + (ROW_GROUPS-1)*gapBlock + 10;
+    var s = '<svg class="plate" viewBox="0 0 '+svgW+' '+svgH+'" xmlns="http://www.w3.org/2000/svg">';
+    for(var c=0;c<COLS;c++){
+      var cg = Math.floor(c/BLOCK_W);
+      var x = padL + c*cw + cg*gapBlock + cw/2;
+      s += '<text x="'+x+'" y="'+(padT-7)+'" font-size="9" text-anchor="middle">'+(c+1)+'</text>';
+    }
+    for(var r=0;r<ROWS;r++){
+      var rg = Math.floor(r/BLOCK_H);
+      var y = padT + r*ch + rg*gapBlock + ch/2 + 3;
+      s += '<text x="'+(padL-9)+'" y="'+y+'" font-size="9" text-anchor="middle">'+ROW_LABELS[r]+'</text>';
+    }
+    W.forEach(function(w){
+      var cg = Math.floor(w.col/BLOCK_W), rg = Math.floor(w.row/BLOCK_H);
+      var x = padL + w.col*cw + cg*gapBlock;
+      var y = padT + w.row*ch + rg*gapBlock;
+      var score = (6-w.xIdx) + (6-w.yIdx); // 0 at zero/zero corner, up to 12 at top-left; corner well is 0+0
+      var fill = w.isCorner ? "var(--surface)" : logColor(Math.max(0,score));
+      var cls = "well" + (w.isCorner ? " blank" : "") + (selectedWell===w.id ? " selected" : "");
+      s += '<rect class="'+cls+'" data-well="'+w.id+'" x="'+x+'" y="'+y+'" width="'+(cw-2)+'" height="'+(ch-2)+'" rx="2" fill="'+fill+'"></rect>';
+    });
+    s += "</svg>";
+    return s;
+  }
+
+  function renderWellDetail(D, W){
+    var box = document.getElementById("wellDetail");
+    if(!selectedWell){ return; }
+    var w = W.filter(function(x){ return x.id===selectedWell; })[0];
+    if(!w){ return; }
+    var rd = wellData[w.id] || {value:"", notes:""};
+    var additions = '<dt>X</dt><dd>'+fmt(w.xConc,4)+' '+unitLabel(D.X.unit)+'</dd>'+
+      '<dt>Y</dt><dd>'+fmt(w.yConc,4)+' '+unitLabel(D.Y.unit)+'</dd>'+
+      '<dt>Z</dt><dd>'+fmt(w.zConc,4)+' '+unitLabel(D.Z.unit)+'</dd>'+
+      '<dt>Block</dt><dd>'+blockLabel(w.block)+'</dd>'+
+      '<dt>Well volume</dt><dd>'+fmt(D.wellVol,0)+' \u00b5L</dd>';
+    box.innerHTML =
+      '<h3>'+w.id+'</h3><dl>'+additions+'</dl>'+
+      '<div class="field"><label>Recorded value</label><input id="wdVal" type="text" value="'+esc(rd.value)+'"></div>'+
+      '<div class="field" style="margin-top:8px;"><label>Notes</label><input id="wdNotes" type="text" value="'+esc(rd.notes)+'"></div>';
+    document.getElementById("wdVal").addEventListener("input", function(){
+      wellData[w.id] = wellData[w.id] || {}; wellData[w.id].value = this.value; save();
+    });
+    document.getElementById("wdNotes").addEventListener("input", function(){
+      wellData[w.id] = wellData[w.id] || {}; wellData[w.id].notes = this.value; save();
+    });
+  }
+
+  function renderFactorTable(D){
+    var rows = [["X","x"],["Y","y"],["Z","z"]].map(function(p){
+      var name=p[0], k=p[1];
+      return '<tr><td>'+name+'</td>'+
+        '<td><input type="number" step="any" id="'+k+'Cmax_disp" data-k="'+k+'" class="wide factorCmax" value="'+esc(el[k+"Cmax"].value)+'"></td>'+
+        '<td><select data-k="'+k+'" class="factorUnit"><option value="ug/mL"'+(D[name].unit==="ug/mL"?" selected":"")+'>\u00b5g/mL</option><option value="uM"'+(D[name].unit==="uM"?" selected":"")+'>\u00b5M</option></select></td>'+
+        '<td><input type="number" step="any" placeholder="g/mol" data-k="'+k+'" class="wide factorMw" value="'+esc(el[k+"Mw"].value)+'"></td>'+
+        '<td><input type="number" step="any" placeholder="e.g. 50000" data-k="'+k+'" class="wide factorSourceConc" value="'+esc(el[k+"SourceConc"].value)+'"></td>'+
+        '<td><select data-k="'+k+'" class="factorSourceUnit"><option value="ug/mL"'+(D[name].sourceUnit==="ug/mL"?" selected":"")+'>\u00b5g/mL</option><option value="uM"'+(D[name].sourceUnit==="uM"?" selected":"")+'>\u00b5M</option></select></td></tr>';
+    });
+    document.getElementById("factorTableWrap").innerHTML =
+      '<table><thead><tr><th>Factor</th><th>C<sub>max</sub> (final)</th><th>Unit</th><th>MW g/mol</th><th>Starting stock</th><th>Stock unit</th></tr></thead>'+
+      '<tbody>'+rows.join("")+'</tbody></table>';
+    wireFactorInputs();
+  }
+
+  function wireFactorInputs(){
+    var map = {Cmax:"Cmax", Unit:"Unit", Mw:"Mw", SourceConc:"SourceConc", SourceUnit:"SourceUnit"};
+    Array.prototype.forEach.call(document.querySelectorAll(".factorCmax"), function(i){
+      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"Cmax"].value = this.value; run(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".factorMw"), function(i){
+      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"Mw"].value = this.value; run(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".factorSourceConc"), function(i){
+      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"SourceConc"].value = this.value; run(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".factorUnit"), function(sel){
+      sel.addEventListener("change", function(){
+        var k = this.getAttribute("data-k");
+        var mw = num(el[k+"Mw"].value, null);
+        var oldUnit = el[k+"Unit"].value, newUnit = this.value;
+        if(mw && mw>0 && oldUnit !== newUnit){
+          var v = num(el[k+"Cmax"].value, null);
+          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)) el[k+"Cmax"].value = fmt(cv,4); }
+        }
+        el[k+"Unit"].value = newUnit;
+        run();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".factorSourceUnit"), function(sel){
+      sel.addEventListener("change", function(){
+        var k = this.getAttribute("data-k");
+        var mw = num(el[k+"Mw"].value, null);
+        var oldUnit = el[k+"SourceUnit"].value, newUnit = this.value;
+        if(mw && mw>0 && oldUnit !== newUnit){
+          var v = num(el[k+"SourceConc"].value, null);
+          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)) el[k+"SourceConc"].value = fmt(cv,4); }
+        }
+        el[k+"SourceUnit"].value = newUnit;
+        run();
+      });
+    });
+  }
+
+  function renderWorkingStockTable(D){
+    var plan = workingStockPlan(D);
+    var rows = ["X","Y","Z"].map(function(name){
+      var p = plan[name], factor = D[name];
+      var noteExtra = (name==="Z") ? (p.mode==="variable" ? " (Z1 strip, 8 tubes)" : (D.scheme==="fixedZ" ? " (whole-plate Z/common-mix reservoir)" : " (whole-plate Z reservoir)")) : " (6 strip tube-1 fills)";
+      if(!p.prep.valid){
+        return '<tr><td>'+name+'</td><td>'+fmt(p.targetConc,4)+' '+unitLabel(p.unit)+'</td><td>'+fmt(p.requiredVol,0)+' \u00b5L'+noteExtra+'</td><td colspan="4" class="flagcell">'+esc(p.prep.reason)+'</td></tr>';
+      }
+      return '<tr><td>'+name+'</td><td>'+fmt(p.targetConc,4)+' '+unitLabel(p.unit)+'</td><td>'+fmt(p.requiredVol,0)+' \u00b5L'+noteExtra+'</td>'+
+        '<td>'+fmt(factor.sourceConc,4)+' '+unitLabel(factor.sourceUnit)+'</td>'+
+        '<td>'+fmt(p.prep.prepVol,1)+' \u00b5L</td>'+
+        '<td>'+fmt(p.prep.sourceVol,2)+' \u00b5L</td>'+
+        '<td>'+fmt(p.prep.diluentVol,2)+' \u00b5L</td></tr>';
+    });
+    document.getElementById("workingStockTableWrap").innerHTML =
+      '<table><thead><tr><th>Factor</th><th>Working-stock target</th><th>Volume needed</th><th>Starting stock</th><th>Prep volume (+overage)</th><th>Source stock volume</th><th>Diluent volume</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
+  }
+
+  function renderRecipeTable(D){
+    document.getElementById("recipeLabel").textContent =
+      D.recipeKey === "half" ? "\u2248 3.167-fold (19/6)" : "2-fold";
+    var half1 = D.tube1Vol/2, halfMid = D.midVol > 100 ? D.midVol/2 : null;
+    var rows = [
+      ["Tube 1: highest working solution", D.tube1Vol, half1 > 100 ? "n/a" : (fmt(half1,0)+" \u00b5L \u00d7 2")],
+      ["Tubes 2\u20137: diluent initially", D.midVol, halfMid ? (fmt(halfMid,0)+" \u00b5L \u00d7 2") : (fmt(D.midVol,0)+" \u00b5L \u00d7 1")],
+      ["Tube 8: vehicle-only control", D.midVol, halfMid ? (fmt(halfMid,0)+" \u00b5L \u00d7 2") : (fmt(D.midVol,0)+" \u00b5L \u00d7 1")],
+      ["Transfer tube \u2192 next tube", D.transferVol, "\u2014"],
+      ["Discard from tube 7 after mixing", D.transferVol, "\u2014"],
+      ["Volume remaining in every tube", D.midVol, "\u2014"]
+    ];
+    document.getElementById("recipeTableWrap").innerHTML =
+      '<table><thead><tr><th>Step</th><th>Volume</th><th>P100/P20 dispense plan</th></tr></thead><tbody>'+
+      rows.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+fmt(r[1],0)+' \u00b5L</td><td>'+r[2]+'</td></tr>'; }).join("")+
+      '</tbody></table>';
+  }
+
+  function renderLadderTable(D){
+    var rowsHtml = "";
+    for(var i=0;i<8;i++){
+      var pos = i+1;
+      var levelLabel = i===0 ? "C\u2098\u2090\u2093" : (i<7 ? ("C\u2098\u2090\u2093/r"+i) : "0");
+      rowsHtml += '<tr><td>'+pos+'</td><td>'+levelLabel+'</td>'+
+        '<td>'+fmt(D.xLevels[i],4)+' '+unitLabel(D.X.unit)+'</td>'+
+        '<td>'+fmt(D.yLevels[i],4)+' '+unitLabel(D.Y.unit)+'</td></tr>';
+    }
+    var zRows = D.zBlockConc.map(function(v,bi){ return '<tr><td>'+blockLabel(bi)+ (D.zMode==="variable" ? (" (Z"+(bi+1)+")") : "") +'</td><td>'+fmt(v,4)+' '+unitLabel(D.Z.unit)+'</td></tr>'; }).join("");
+    document.getElementById("ladderTableWrap").innerHTML =
+      '<table><thead><tr><th>Position</th><th>Level</th><th>X</th><th>Y</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
+      '<table style="margin-top:10px;"><thead><tr><th>Z by block</th><th>Concentration</th></tr></thead><tbody>'+zRows+'</tbody></table>';
+  }
+
+  function renderBlocksTable(D){
+    var rows = [];
+    for(var bi=0;bi<D.numBlocks;bi++){
+      blocks[bi] = blocks[bi] || {};
+      var rowGroup = Math.floor(bi / COL_GROUPS), colGroup = bi % COL_GROUPS;
+      var rowRange = ROW_LABELS[rowGroup*BLOCK_H] + "\u2013" + ROW_LABELS[rowGroup*BLOCK_H+BLOCK_H-1];
+      var colRange = (colGroup*BLOCK_W+1) + "\u2013" + (colGroup*BLOCK_W+BLOCK_W);
+      rows.push('<tr><td>'+blockLabel(bi)+'</td><td>'+rowRange+'</td><td>'+colRange+'</td>'+
+        '<td>'+(D.zMode==="variable" ? "Z"+(bi+1) : "fixed")+'</td>'+
+        '<td>'+fmt(D.zBlockConc[bi],4)+' '+unitLabel(D.Z.unit)+'</td>'+
+        '<td><input type="text" class="wide blockLabel" data-bi="'+bi+'" value="'+esc(blocks[bi].label||"")+'" placeholder="sample label"></td></tr>');
+    }
+    document.getElementById("blocksTableWrap").innerHTML =
+      '<table><thead><tr><th>Block</th><th>Rows</th><th>Columns</th><th>Z strip</th><th>Z concentration</th><th>Label</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
+    Array.prototype.forEach.call(document.querySelectorAll(".blockLabel"), function(i){
+      i.addEventListener("input", function(){ var bi=this.getAttribute("data-bi"); blocks[bi]=blocks[bi]||{}; blocks[bi].label=this.value; save(); });
+    });
+  }
+
+  function recommendPipette(name){
+    return {
+      "x-fill":"Adjustable P20 (two dispenses)", "x-diluent":"Adjustable P20",
+      "x-serial":"12-channel P100 (12 tubes loaded)", "x-add":"8-channel P20 (96-well then 384-well spacing)",
+      "z-fill":"Adjustable P20 (two dispenses)", "z-diluent":"Adjustable P20",
+      "z-serial":"12-channel P100 (8 of 12 channels loaded)", "z-add":"8-channel P20",
+      "reservoir":"16-channel P100 (one column at a time)"
+    }[name] || "";
+  }
+
+  function buildPrepSteps(D){
+    var steps = [];
+    var n = 0;
+    function add(action, detail, volume, pipette){ steps.push({n:++n, action:action, detail:detail, volume:volume, pipette:pipette}); }
+
+    add("Fill X1\u2013X6 tube 1", "Each of 6 X strips, tube 1, with the X working solution", D.tube1Vol+" \u00b5L \u00d7 6 tubes", recommendPipette("x-fill"));
+    add("Fill X1\u2013X6 tubes 2\u20138", "Diluent, each of 6 X strips \u00d7 7 tubes", D.midVol+" \u00b5L \u00d7 42 tubes", recommendPipette("x-diluent"));
+    add("Serially dilute X1\u2013X6", "Position 1\u21922\u2192\u2026\u21927 across all 6 strips together, mixing before each transfer; discard one transfer volume from position 7", D.transferVol+" \u00b5L", recommendPipette("x-serial"));
+    add("Fill Y1\u2013Y6 tube 1", "Each of 6 Y strips, tube 1, with the Y working solution", D.tube1Vol+" \u00b5L \u00d7 6 tubes", recommendPipette("x-fill"));
+    add("Fill Y1\u2013Y6 tubes 2\u20138", "Diluent, each of 6 Y strips \u00d7 7 tubes", D.midVol+" \u00b5L \u00d7 42 tubes", recommendPipette("x-diluent"));
+    add("Serially dilute Y1\u2013Y6", "Position 1\u21922\u2192\u2026\u21927 across all 6 strips together, mixing before each transfer; discard one transfer volume from position 7", D.transferVol+" \u00b5L", recommendPipette("x-serial"));
+
+    if(D.zMode === "variable"){
+      add("Fill Z1 (8 tubes)", "All 8 tubes of Z1 with the Z working solution", D.tube1Vol+" \u00b5L \u00d7 8 tubes", recommendPipette("z-fill"));
+      add("Fill Z2\u2013Z6 (8 tubes each)", "Diluent/vehicle, 8 tubes \u00d7 5 strips", D.midVol+" \u00b5L \u00d7 40 tubes", recommendPipette("z-diluent"));
+      add("Serially dilute Z1\u2192Z2\u2192\u2192Z5", "Strip-to-strip, 8 loaded channels, mixing at each step; discard one transfer volume from every Z5 tube; do not transfer into Z6", D.transferVol+" \u00b5L", recommendPipette("z-serial"));
+    } else {
+      add("Prepare Z working solution", D.scheme==="fixedZ" ? "2\u00d7 Z combined with common assay mixture, enough for the whole plate" : "Single Z working solution, enough for the whole plate", fmt(D.numWells*D.additionVolZ,0)+" \u00b5L (+ overage)", recommendPipette("reservoir"));
+    }
+
+    add("Add X to every block", "10 \u00b5L per well, across each block's 8 columns, highest concentration at column 1 of the block", D.additionVolX+" \u00b5L/well", recommendPipette("x-add"));
+    add("Add Y to every block", "10 \u00b5L per well, down each block's 8 rows, highest concentration at row 1 of the block", D.additionVolY+" \u00b5L/well", recommendPipette("x-add"));
+
+    if(D.scheme === "fixedZ"){
+      add("Add Z/common assay mixture", "20 \u00b5L per well, one full plate column at a time, A\u2013P in one pass", fmt(D.numWells*D.additionVolZ,0)+" \u00b5L total", recommendPipette("reservoir"));
+    } else if(D.scheme === "variableZ"){
+      add("Add Z per block", "10 \u00b5L per well, from that block's Z strip", D.additionVolZ+" \u00b5L/well", recommendPipette("z-add"));
+      add("Add common assay mixture", "10 \u00b5L per well, one full plate column at a time", fmt(D.numWells*D.additionVolCommon,0)+" \u00b5L total", recommendPipette("reservoir"));
+    } else {
+      add("Add Z per block", "10 \u00b5L per well, from that block's Z strip or reservoir", D.additionVolZ+" \u00b5L/well", recommendPipette("z-add"));
+    }
+    return steps;
+  }
+
+  function renderStepsTable(D){
+    var steps = buildPrepSteps(D);
+    document.getElementById("stepsTableWrap").innerHTML =
+      '<table><thead><tr><th>#</th><th>Action</th><th>Detail</th><th>Volume</th><th>Pipette</th></tr></thead><tbody>'+
+      steps.map(function(s){ return '<tr><td>'+s.n+'</td><td>'+esc(s.action)+'</td><td>'+esc(s.detail)+'</td><td>'+esc(s.volume)+'</td><td>'+esc(s.pipette)+'</td></tr>'; }).join("")+
+      '</tbody></table>';
+  }
+
+  function renderWellTable(D, W){
+    var rows = W.map(function(w){
+      var rd = wellData[w.id] || {};
+      return '<tr><td>'+w.id+'</td><td>'+blockLabel(w.block)+'</td><td>'+fmt(w.xConc,3)+'</td><td>'+fmt(w.yConc,3)+'</td><td>'+fmt(w.zConc,3)+'</td>'+
+        '<td><input type="text" class="wide wellVal" data-id="'+w.id+'" value="'+esc(rd.value||"")+'"></td>'+
+        '<td><input type="text" class="wide wellNotes" data-id="'+w.id+'" value="'+esc(rd.notes||"")+'"></td></tr>';
+    });
+    document.getElementById("wellTableWrap").innerHTML =
+      '<table><thead><tr><th>Well</th><th>Block</th><th>X</th><th>Y</th><th>Z</th><th>Recorded value</th><th>Notes</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
+    Array.prototype.forEach.call(document.querySelectorAll(".wellVal"), function(i){
+      i.addEventListener("input", function(){ var id=this.getAttribute("data-id"); wellData[id]=wellData[id]||{}; wellData[id].value=this.value; save(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".wellNotes"), function(i){
+      i.addEventListener("input", function(){ var id=this.getAttribute("data-id"); wellData[id]=wellData[id]||{}; wellData[id].notes=this.value; save(); });
+    });
+  }
+
+  function renderVerdicts(D){
+    var sv = [], stv = [];
+    function v(target, tag, cls, msg){ target.push('<div class="verdict '+cls+'"><span class="tag">'+tag+'</span><p>'+msg+'</p></div>'); }
+    if(!(D.X.cmax > 0)) v(sv, "CHECK", "v-warn", "Set a nonzero X C\u2098\u2090\u2093.");
+    if(!(D.Y.cmax > 0)) v(sv, "CHECK", "v-warn", "Set a nonzero Y C\u2098\u2090\u2093.");
+    if(D.zMode!=="fixed" && !(D.Z.cmax>0)) v(sv, "CHECK", "v-warn", "Set a nonzero Z C\u2098\u2090\u2093 for the variable-Z ladder.");
+    if(sv.length===0) v(sv, "OK", "v-ok", "Scheme, recipe, and factor concentrations look consistent.");
+    document.getElementById("schemeVerdicts").innerHTML = sv.join("");
+
+    var plan = workingStockPlan(D);
+    ["X","Y","Z"].forEach(function(name){
+      if(!plan[name].prep.valid) v(stv, "INVALID", "v-bad", name+": "+esc(plan[name].prep.reason));
+    });
+    if(stv.length===0) v(stv, "OK", "v-ok", "Every working-stock dilution is feasible from the entered starting stocks.");
+    document.getElementById("stockVerdicts").innerHTML = stv.join("");
+  }
+
+  // ---------- FAIR export table specs ----------
+  function tableSpecs(D, W){
+    var specs = [];
+    specs.push({
+      name:"protocol_parameters", title:"Scheme, recipe, and per-factor parameters for this run",
+      fields:[
+        {name:"parameter",type:"string",description:"Parameter name"},
+        {name:"value",type:"string",description:"Parameter value"},
+        {name:"unit",type:"string",description:"Unit, where applicable"}
+      ],
+      rows:[
+        ["scheme", D.scheme, ""], ["recipe", D.recipeKey==="half"?"~3.167-fold (19/6)":"2-fold", ""],
+        ["dilution_factor_r", fmt(D.r,6), ""], ["z_mode", D.zMode, ""], ["well_volume", fmt(D.wellVol,0), "uL"],
+        ["x_cmax", fmt(D.X.cmax,6), unitLabel(D.X.unit)], ["x_mw", D.X.mw?fmt(D.X.mw,4):"", "g/mol"],
+        ["x_source_conc", D.X.sourceConc?fmt(D.X.sourceConc,6):"", unitLabel(D.X.sourceUnit)],
+        ["y_cmax", fmt(D.Y.cmax,6), unitLabel(D.Y.unit)], ["y_mw", D.Y.mw?fmt(D.Y.mw,4):"", "g/mol"],
+        ["y_source_conc", D.Y.sourceConc?fmt(D.Y.sourceConc,6):"", unitLabel(D.Y.sourceUnit)],
+        ["z_cmax", fmt(D.Z.cmax,6), unitLabel(D.Z.unit)], ["z_mw", D.Z.mw?fmt(D.Z.mw,4):"", "g/mol"],
+        ["z_source_conc", D.Z.sourceConc?fmt(D.Z.sourceConc,6):"", unitLabel(D.Z.sourceUnit)],
+        ["overage_percent", fmt(D.overagePct,2), "%"], ["common_assay_mixture_note", D.commonMixNote, ""]
+      ]
+    });
+    specs.push({
+      name:"concentration_ladders", title:"Per-axis concentration ladder (position 1 = C_max, position 8 = 0)",
+      fields:[
+        {name:"axis",type:"string",description:"X, Y, or Z (by block)"},
+        {name:"position",type:"integer",description:"Ladder position, 1-8 (X/Y) or block number (Z)"},
+        {name:"concentration",type:"number",description:"Final in-well concentration"},
+        {name:"unit",type:"string",description:"Concentration unit"}
+      ],
+      rows: D.xLevels.map(function(v,i){ return ["X", i+1, v, unitLabel(D.X.unit)]; })
+        .concat(D.yLevels.map(function(v,i){ return ["Y", i+1, v, unitLabel(D.Y.unit)]; }))
+        .concat(D.zBlockConc.map(function(v,i){ return ["Z", i+1, v, unitLabel(D.Z.unit)]; }))
+    });
+    var plan = workingStockPlan(D);
+    specs.push({
+      name:"working_stock_prep", title:"Working-stock dilution from each factor's starting stock",
+      fields:[
+        {name:"factor",type:"string",description:"X, Y, or Z"},
+        {name:"target_concentration",type:"number",description:"Working-solution concentration needed"},
+        {name:"target_unit",type:"string",description:"Unit of target_concentration"},
+        {name:"required_volume_uL",type:"number",unit:"uL",description:"Total working-solution volume needed before overage"},
+        {name:"source_concentration",type:"number",description:"Starting stock concentration"},
+        {name:"source_unit",type:"string",description:"Unit of source_concentration"},
+        {name:"overage_percent",type:"number",unit:"%",description:"Extra percent prepared"},
+        {name:"prep_volume_uL",type:"number",unit:"uL",description:"Volume actually prepared, including overage"},
+        {name:"source_volume_uL",type:"number",unit:"uL",description:"Volume of starting stock to take"},
+        {name:"diluent_volume_uL",type:"number",unit:"uL",description:"Volume of diluent to add"},
+        {name:"valid",type:"boolean",description:"Whether the dilution is feasible as entered"}
+      ],
+      rows:["X","Y","Z"].map(function(name){
+        var p = plan[name], f = D[name];
+        return [name, p.targetConc, unitLabel(p.unit), p.requiredVol, f.sourceConc||"", unitLabel(f.sourceUnit), D.overagePct,
+          p.prep.valid?p.prep.prepVol:"", p.prep.valid?p.prep.sourceVol:"", p.prep.valid?p.prep.diluentVol:"", p.prep.valid];
+      })
+    });
+    specs.push({
+      name:"strip_prep", title:"Strip/tube dilution recipe for the chosen r",
+      fields:[
+        {name:"strip",type:"string",description:"X, Y, or Z (variable-Z only)"},
+        {name:"tube1_volume_uL",type:"number",unit:"uL",description:"Highest working solution fill, tube/position 1"},
+        {name:"mid_volume_uL",type:"number",unit:"uL",description:"Diluent fill, positions 2-8"},
+        {name:"transfer_volume_uL",type:"number",unit:"uL",description:"Volume carried from one position/strip to the next"}
+      ],
+      rows:[["X", D.tube1Vol, D.midVol, D.transferVol],["Y", D.tube1Vol, D.midVol, D.transferVol]]
+        .concat(D.zMode==="variable" ? [["Z", D.tube1Vol, D.midVol, D.transferVol]] : [])
+    });
+    specs.push({
+      name:"plate_design", title:"Per-well block, X/Y/Z concentration, and addition volumes",
+      fields:[
+        {name:"well_id",type:"string",description:"Well ID, e.g. A1"},
+        {name:"row",type:"integer",description:"0-based row index"},
+        {name:"col",type:"integer",description:"0-based column index"},
+        {name:"block",type:"integer",description:"1-based block number, 1-6"},
+        {name:"x_concentration",type:"number",description:"Final X concentration"},
+        {name:"x_unit",type:"string",description:"Unit of x_concentration"},
+        {name:"y_concentration",type:"number",description:"Final Y concentration"},
+        {name:"y_unit",type:"string",description:"Unit of y_concentration"},
+        {name:"z_concentration",type:"number",description:"Final Z concentration"},
+        {name:"z_unit",type:"string",description:"Unit of z_concentration"},
+        {name:"well_volume_uL",type:"number",unit:"uL",description:"Total final volume per well"}
+      ],
+      rows: W.map(function(w){ return [w.id, w.row, w.col, w.block+1, w.xConc, unitLabel(D.X.unit), w.yConc, unitLabel(D.Y.unit), w.zConc, unitLabel(D.Z.unit), D.wellVol]; })
+    });
+    var steps = buildPrepSteps(D);
+    specs.push({
+      name:"prep_steps", title:"Ordered bench steps with volumes and recommended pipette",
+      fields:[
+        {name:"step",type:"integer",description:"Order"},
+        {name:"action",type:"string",description:"What to do"},
+        {name:"detail",type:"string",description:"Additional detail"},
+        {name:"volume",type:"string",description:"Volume(s) involved"},
+        {name:"pipette",type:"string",description:"Recommended pipette"}
+      ],
+      rows: steps.map(function(s){ return [s.n, s.action, s.detail, s.volume, s.pipette]; })
+    });
+    specs.push({
+      name:"sample_values", title:"Per-well recorded value and notes",
+      fields:[
+        {name:"well_id",type:"string",description:"Well ID"},
+        {name:"block",type:"integer",description:"1-based block number"},
+        {name:"block_label",type:"string",description:"Optional free-text sample label for the block"},
+        {name:"recorded_value",type:"string",description:"Value typed into section 8"},
+        {name:"notes",type:"string",description:"Notes typed into section 8"}
+      ],
+      rows: W.map(function(w){ var rd = wellData[w.id]||{}; return [w.id, w.block+1, (blocks[w.block]||{}).label||"", rd.value||"", rd.notes||""]; })
+    });
+    return specs;
+  }
+
+  function meta(){
+    var m={}; METAIDS.forEach(function(k){ m[k]=(el[k].value||"").trim(); });
+    return m;
+  }
+
+  function buildDatapackage(D, W, specs){
+    var m = meta(), now = new Date().toISOString();
+    var kw = ["checkerboard titration","synergy assay","384-well","combination dosing","dilution series","pipetting"];
+    var contributors = [];
+    if(m.mAuthor){
+      var c = {title:m.mAuthor, role:"author"};
+      if(m.mOrcid) c.path = "https://orcid.org/"+m.mOrcid.replace(/^https?:\/\/orcid\.org\//,"");
+      if(m.mOrg) c.organization = m.mOrg;
+      contributors.push(c);
+    }
+    var desc = m.mDesc ||
+      ("A 384-well, six-block 8x8 X-Y checkerboard ("+D.scheme+", "+(D.recipeKey==="half"?"~3.167-fold":"2-fold")+" dilution).");
+    if(synthetic) desc = "*** CONTAINS SIMULATED VALUES - NOT MEASURED DATA *** " + desc;
+    return {
+      profile:"tabular-data-package",
+      name: slug(m.mTitle, "checkerboard-dataset"),
+      title: m.mTitle || "Checkerboard titration run",
+      description: desc,
+      created: now,
+      version: "1.0.0",
+      homepage: SITE,
+      licenses:[{name:"CC-BY-4.0", path:"https://creativecommons.org/licenses/by/4.0/", title:"Creative Commons Attribution 4.0 International"}],
+      keywords: kw,
+      contributors: contributors,
+      protocol:{
+        run_id: m.mRun || null,
+        scheme: D.scheme, recipe: D.recipeKey, dilution_factor_r: D.r, z_mode: D.zMode,
+        well_volume_uL: D.wellVol, num_blocks: D.numBlocks, block_height: D.blockHeight, block_width: D.blockWidth,
+        x_cmax: D.X.cmax, x_unit: D.X.unit, x_mw: D.X.mw, x_source_conc: D.X.sourceConc, x_source_unit: D.X.sourceUnit,
+        y_cmax: D.Y.cmax, y_unit: D.Y.unit, y_mw: D.Y.mw, y_source_conc: D.Y.sourceConc, y_source_unit: D.Y.sourceUnit,
+        z_cmax: D.Z.cmax, z_unit: D.Z.unit, z_mw: D.Z.mw, z_source_conc: D.Z.sourceConc, z_source_unit: D.Z.sourceUnit,
+        overage_percent: D.overagePct, common_assay_mixture_note: D.commonMixNote,
+        hypothesis: m.mHypothesis || null,
+        contains_simulated_values: synthetic
+      },
+      provenance:{
+        generated_by:"Checkerboard Titration Builder",
+        software_url: SITE,
+        source_code: REPO,
+        generated_at: now,
+        assumptions:[
+          "Each block is an 8x8 X-Y checkerboard: X decreases left to right across the block (7 nonzero levels + zero), Y decreases top to bottom (7 nonzero levels + zero); the bottom-right well of every block is X=Y=0.",
+          "Fixed-Z: every block shares the same final Z concentration (technical replicates). Variable-Z: each block is assigned one of six Z levels (five nonzero, geometrically spaced by the same factor r, plus one Z-free block).",
+          "X, Y, and (when variable) Z working solutions are prepared at the multiple of C_max needed so that a fixed 10 uL (or 20 uL combined Z/assay-mix) addition reaches the intended final concentration in the chosen well volume.",
+          "Mass <-> molar conversion uses uM = (ug/mL * 1000) / molecular_weight_g_per_mol; it requires a molecular weight and is only as accurate as the value entered.",
+          "Working-stock preparation assumes simple dilution (V1*C1 = V2*C2) of a single starting/source stock solution per factor, with no evaporation or mixing loss, plus the entered overage percent.",
+          "Strip tube volumes (fill, diluent, transfer, discard, remaining) follow the recommended-design recipe for the chosen dilution factor r (2-fold or ~3.167-fold/19-6).",
+          "Recorded values and notes are exactly what was typed into section 8 for this run; they are not independently verified."
+        ]
+      },
+      resources: specs.map(function(sp){
+        return {
+          name: sp.name, path:"data/"+sp.name+".csv", profile:"tabular-data-resource", format:"csv",
+          mediatype:"text/csv", encoding:"utf-8", title: sp.title,
+          dialect:{delimiter:",", lineTerminator:"\r\n", header:true},
+          schema:{fields: sp.fields.map(function(f){ var o={name:f.name,type:f.type,description:f.description}; if(f.unit) o.unit=f.unit; return o; })}
+        };
+      })
+    };
+  }
+
+  function buildReadme(D, W, specs){
+    var m = meta(), L = [];
+    L.push("# "+(m.mTitle || "Checkerboard titration run"));
+    L.push("");
+    if(synthetic){
+      L.push("> **WARNING - THIS PACKAGE CONTAINS SIMULATED VALUES.**");
+      L.push("> Some or all recorded values were generated by the builder's demo filler, not measured");
+      L.push("> at a bench. Do not cite, publish, or pool these as real data.");
+      L.push("");
+    }
+    if(m.mDesc){ L.push(m.mDesc); L.push(""); }
+    L.push("Generated by [Checkerboard Titration Builder]("+SITE+") on "+new Date().toISOString()+".");
+    L.push("");
+    L.push("## Protocol");
+    L.push("");
+    L.push("| Field | Value |");
+    L.push("| --- | --- |");
+    [["Investigator",m.mAuthor],["ORCID",m.mOrcid],["Institution",m.mOrg],["Run / plate ID",m.mRun],
+     ["Scheme",D.scheme],["Recipe",D.recipeKey==="half"?"~3.167-fold (19/6)":"2-fold"],["Z assignment",D.zMode],
+     ["Well volume (\u00b5L)",fmt(D.wellVol,0)],
+     ["X C_max",fmt(D.X.cmax,4)+" "+unitLabel(D.X.unit)],["X MW",D.X.mw?fmt(D.X.mw,2)+" g/mol":""],
+     ["X starting stock",D.X.sourceConc?fmt(D.X.sourceConc,4)+" "+unitLabel(D.X.sourceUnit):""],
+     ["Y C_max",fmt(D.Y.cmax,4)+" "+unitLabel(D.Y.unit)],["Y MW",D.Y.mw?fmt(D.Y.mw,2)+" g/mol":""],
+     ["Y starting stock",D.Y.sourceConc?fmt(D.Y.sourceConc,4)+" "+unitLabel(D.Y.sourceUnit):""],
+     ["Z C_max",fmt(D.Z.cmax,4)+" "+unitLabel(D.Z.unit)],["Z MW",D.Z.mw?fmt(D.Z.mw,2)+" g/mol":""],
+     ["Z starting stock",D.Z.sourceConc?fmt(D.Z.sourceConc,4)+" "+unitLabel(D.Z.sourceUnit):""],
+     ["Working stock overage",fmt(D.overagePct,1)+"%"]
+    ].forEach(function(p){ if(p[1]) L.push("| "+p[0]+" | "+p[1]+" |"); });
+    L.push("");
+    if(m.mHypothesis){ L.push("Hypothesis: "+m.mHypothesis); L.push(""); }
+    L.push("## Method");
+    L.push("");
+    L.push("```text");
+    L.push("uM = (ug_per_mL * 1000) / molecular_weight_g_per_mol        (mass <-> molar conversion)");
+    L.push("working_stock_volume_uL = prep_volume_uL * target_conc / source_conc   (V1*C1 = V2*C2)");
+    L.push("working_stock_diluent_uL = prep_volume_uL - working_stock_volume_uL");
+    L.push("ladder level i (i=0..6) = C_max / r^i ;  level 7 (last) = 0");
+    L.push("variable-Z block j (j=0..4) = Z_max / r^j ; block 5 (last) = 0");
+    L.push("transfer_volume = (per the chosen recipe: 100 uL for r=2, 48 uL for r=19/6)");
+    L.push("```");
+    L.push("");
+    L.push("## Files");
+    L.push("");
+    L.push("| Path | Contents |");
+    L.push("| --- | --- |");
+    L.push("| `datapackage.json` | Frictionless descriptor: types, units, licence, provenance |");
+    specs.forEach(function(sp){ L.push("| `data/"+sp.name+".csv` | "+sp.title+" |"); });
+    L.push("| `CITATION.cff` | Machine-readable citation metadata |");
+    L.push("| `LICENSE.txt` | CC BY 4.0 |");
+    L.push("");
+    L.push("## Column dictionary");
+    L.push("");
+    specs.forEach(function(sp){
+      L.push("### `data/"+sp.name+".csv`");
+      L.push("");
+      L.push("| Column | Type | Unit | Meaning |");
+      L.push("| --- | --- | --- | --- |");
+      sp.fields.forEach(function(f){ L.push("| `"+f.name+"` | "+f.type+" | "+(f.unit||"-")+" | "+f.description+" |"); });
+      L.push("");
+    });
+    L.push("## Assumptions and limits");
+    L.push("");
+    L.push("- Block geometry (8x8, X across columns, Y down rows, bottom-right = X=Y=0) is fixed to the recommended design.");
+    L.push("- Pipetting steps are generated from the chosen recipe/scheme; they are not a physical channel-pitch simulation.");
+    L.push("- Working-stock preparation assumes complete, lossless dilution of a single starting stock per factor.");
+    L.push("");
+    L.push("## Reuse");
+    L.push("");
+    L.push("Data are licensed CC BY 4.0 (SPDX: `CC-BY-4.0`). Attribute the investigator named above.");
+    L.push("");
+    return L.join("\n");
+  }
+
+  function buildCitation(){
+    var m = meta(), L = [];
+    L.push("cff-version: 1.2.0");
+    L.push('message: "If you use this dataset, please cite it as below."');
+    L.push("type: dataset");
+    L.push('title: "'+(m.mTitle || "Checkerboard titration run").replace(/"/g,"'")+'"');
+    L.push("authors:");
+    if(m.mAuthor){
+      var parts = m.mAuthor.trim().split(/\s+/);
+      if(parts.length > 1){
+        var family = parts.pop();
+        L.push('  - family-names: "'+family.replace(/"/g,"'")+'"');
+        L.push('    given-names: "'+parts.join(" ").replace(/"/g,"'")+'"');
+      } else {
+        L.push('  - name: "'+m.mAuthor.replace(/"/g,"'")+'"');
+      }
+      if(m.mOrcid) L.push('    orcid: "https://orcid.org/'+m.mOrcid.replace(/^https?:\/\/orcid\.org\//,"").replace(/"/g,"")+'"');
+      if(m.mOrg) L.push('    affiliation: "'+m.mOrg.replace(/"/g,"'")+'"');
+    } else {
+      L.push('  - name: "Unattributed"');
+    }
+    L.push("date-released: "+new Date().toISOString().slice(0,10));
+    L.push("version: 1.0.0");
+    L.push("license: CC-BY-4.0");
+    L.push("url: "+SITE);
+    if(m.mDesc) L.push('abstract: "'+m.mDesc.replace(/"/g,"'")+'"');
+    L.push("keywords:");
+    ["checkerboard titration","synergy assay","384-well","combination dosing"].forEach(function(k){ L.push('  - "'+k+'"'); });
+    L.push("");
+    return L.join("\n");
+  }
+
+  var LICENSE_TXT = [
+    "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "SPDX-License-Identifier: CC-BY-4.0",
+    "",
+    "The data in this package are licensed under the Creative Commons Attribution 4.0",
+    "International License. You are free to share and adapt the material for any purpose,",
+    "including commercially, provided you give appropriate credit, link to the licence,",
+    "and indicate if changes were made.",
+    "",
+    "Full legal code:  https://creativecommons.org/licenses/by/4.0/legalcode",
+    "Plain summary:    https://creativecommons.org/licenses/by/4.0/",
+    "",
+    "The Checkerboard Titration Builder software that produced this package is separately licensed",
+    "under the MIT Licence: "+REPO,
+    ""
+  ].join("\n");
+
+  // ---------- zip writer (store method, no dependencies) ----------
+  var CRCT = (function(){
+    var t = new Uint32Array(256);
+    for(var i=0;i<256;i++){
+      var c=i;
+      for(var k=0;k<8;k++) c = (c&1) ? (0xEDB88320^(c>>>1)) : (c>>>1);
+      t[i]=c>>>0;
+    }
+    return t;
+  })();
+  function crc32(b){
+    var c=0xFFFFFFFF;
+    for(var i=0;i<b.length;i++) c = CRCT[(c^b[i])&0xFF] ^ (c>>>8);
+    return (c^0xFFFFFFFF)>>>0;
+  }
+  function zip(files){
+    var enc = new TextEncoder(), local=[], central=[], offset=0, d=new Date();
+    var dosTime = ((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1)) & 0xFFFF;
+    var dosDate = (((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate()) & 0xFFFF;
+    files.forEach(function(f){
+      var name=enc.encode(f.name), data=enc.encode(f.text), crc=crc32(data);
+      var lh=new Uint8Array(30+name.length), lv=new DataView(lh.buffer);
+      lv.setUint32(0,0x04034b50,true); lv.setUint16(4,20,true);
+      lv.setUint16(6,0x0800,true);     lv.setUint16(8,0,true);
+      lv.setUint16(10,dosTime,true);   lv.setUint16(12,dosDate,true);
+      lv.setUint32(14,crc,true);       lv.setUint32(18,data.length,true);
+      lv.setUint32(22,data.length,true);
+      lv.setUint16(26,name.length,true); lv.setUint16(28,0,true);
+      lh.set(name,30);
+      local.push(lh, data);
+
+      var ch=new Uint8Array(46+name.length), cv=new DataView(ch.buffer);
+      cv.setUint32(0,0x02014b50,true); cv.setUint16(4,20,true); cv.setUint16(6,20,true);
+      cv.setUint16(8,0x0800,true);     cv.setUint16(10,0,true);
+      cv.setUint16(12,dosTime,true);   cv.setUint16(14,dosDate,true);
+      cv.setUint32(16,crc,true);       cv.setUint32(20,data.length,true);
+      cv.setUint32(24,data.length,true);
+      cv.setUint16(28,name.length,true); cv.setUint16(30,0,true); cv.setUint16(32,0,true);
+      cv.setUint16(34,0,true); cv.setUint16(36,0,true); cv.setUint32(38,0,true);
+      cv.setUint32(42,offset,true);
+      ch.set(name,46);
+      central.push(ch);
+      offset += lh.length + data.length;
+    });
+    var cdSize = central.reduce(function(a,b){ return a+b.length; },0);
+    var eo=new Uint8Array(22), ev=new DataView(eo.buffer);
+    ev.setUint32(0,0x06054b50,true);
+    ev.setUint16(4,0,true); ev.setUint16(6,0,true);
+    ev.setUint16(8,files.length,true); ev.setUint16(10,files.length,true);
+    ev.setUint32(12,cdSize,true); ev.setUint32(16,offset,true); ev.setUint16(20,0,true);
+    return new Blob(local.concat(central,[eo]), {type:"application/zip"});
+  }
+  function download(blob, filename){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 0);
+  }
+  function packageFiles(D, W){
+    var specs = tableSpecs(D, W);
+    var files = [
+      {name:"datapackage.json", text:JSON.stringify(buildDatapackage(D, W, specs), null, 2)},
+      {name:"README.md",        text:buildReadme(D, W, specs)},
+      {name:"CITATION.cff",     text:buildCitation()},
+      {name:"LICENSE.txt",      text:LICENSE_TXT}
+    ];
+    specs.forEach(function(sp){ files.push({name:"data/"+sp.name+".csv", text:toCSV(sp)}); });
+    return files;
+  }
+
+  // ---------- persistence ----------
+  function save(){
+    try{
+      var o = {design:{}, blocks:blocks, wellData:wellData, synthetic:synthetic};
+      DESIGN_IDS.forEach(function(k){ o.design[k] = el[k].type === "checkbox" ? el[k].checked : el[k].value; });
+      localStorage.setItem("checkerboard_design", JSON.stringify(o));
+    }catch(e){}
+  }
+  function saveMeta(){
+    try{ var m={}; METAIDS.forEach(function(k){ m[k]=el[k].value; }); localStorage.setItem("checkerboard_meta", JSON.stringify(m)); }catch(e){}
+  }
+  (function restore(){
+    try{
+      var d = JSON.parse(localStorage.getItem("checkerboard_design")||"null");
+      if(d){
+        if(d.design) Object.keys(d.design).forEach(function(k){
+          if(!el[k]) return;
+          if(el[k].type === "checkbox") el[k].checked = !!d.design[k]; else el[k].value = d.design[k];
+        });
+        if(d.blocks) blocks = d.blocks;
+        if(d.wellData) wellData = d.wellData;
+        synthetic = !!d.synthetic;
+      }
+    }catch(e){}
+    try{
+      var m = JSON.parse(localStorage.getItem("checkerboard_meta")||"null");
+      if(m) METAIDS.forEach(function(k){ if(m[k]!=null) el[k].value = m[k]; });
+    }catch(e){}
+  })();
+
+  // ---------- run loop ----------
+  function run(){
+    var D = computeDesign();
+    var W = wells(D);
+    document.getElementById("schemeHint").textContent =
+      D.numBlocks+" blocks of "+D.blockHeight+"\u00d7"+D.blockWidth+" wells ("+ (D.blockHeight*D.blockWidth) +" wells each), "+
+      D.wellVol+" \u00b5L/well, dilution factor r = "+fmt(D.r,4)+".";
+    document.getElementById("plateSvgWrap").innerHTML = renderPlate(D, W);
+    Array.prototype.forEach.call(document.querySelectorAll('#plateSvgWrap .well'), function(c){
+      c.addEventListener("click", function(){ selectedWell = this.getAttribute("data-well"); run(); });
+    });
+    renderFactorTable(D);
+    renderWorkingStockTable(D);
+    renderRecipeTable(D);
+    renderLadderTable(D);
+    renderWellDetail(D, W);
+    renderBlocksTable(D);
+    renderStepsTable(D);
+    renderWellTable(D, W);
+    renderVerdicts(D);
+    CUR = {D:D, W:W};
+    save();
+  }
+
+  // ---------- events ----------
+  DESIGN_IDS.forEach(function(k){
+    if(/Unit$/.test(k) && k !== "commonMixNote") return; // handled per-factor in wireFactorInputs/renderFactorTable
+    el[k].addEventListener("input", run);
+    el[k].addEventListener("change", run);
+  });
+  METAIDS.forEach(function(k){
+    el[k].addEventListener("input", function(){ saveMeta(); status("exportStatus",""); });
+  });
+
+  document.getElementById("demoFill").addEventListener("click", function(){
+    if(!CUR) return;
+    CUR.W.forEach(function(w){
+      var base = w.xConc + w.yConc + w.zConc;
+      wellData[w.id] = {value: (base * (0.85+Math.random()*0.3)).toFixed(3), notes:"simulated demo value"};
+    });
+    for(var bi=0;bi<CUR.D.numBlocks;bi++){ blocks[bi] = blocks[bi]||{}; if(!blocks[bi].label) blocks[bi].label = "Demo block "+(bi+1); }
+    synthetic = true;
+    save(); run();
+    status("exportStatus", "Filled with simulated demo values \u2014 flagged as synthetic.");
+  });
+  document.getElementById("clearData").addEventListener("click", function(){
+    wellData = {}; synthetic = false; save(); run();
+    status("exportStatus", "Recorded data cleared.");
+  });
+
+  document.getElementById("dlZip").addEventListener("click", function(){
+    if(!CUR) return;
+    try{
+      var files = packageFiles(CUR.D, CUR.W);
+      var m = meta();
+      var stamp = new Date().toISOString().slice(0,10);
+      var base = slug(m.mTitle || m.mRun, "checkerboard");
+      download(zip(files), base+"_"+stamp+".zip");
+      status("exportStatus", "Wrote "+files.length+" files"+(synthetic ? " \u2014 flagged as containing simulated values." : "."));
+    }catch(err){
+      status("exportStatus", "Export failed: "+err.message, true);
+    }
+  });
+  document.getElementById("dlJson").addEventListener("click", function(){
+    if(!CUR) return;
+    var pre = document.getElementById("jsonPreview");
+    if(!pre.hidden){ pre.hidden = true; return; }
+    pre.textContent = JSON.stringify(buildDatapackage(CUR.D, CUR.W, tableSpecs(CUR.D, CUR.W)), null, 2);
+    pre.hidden = false;
+  });
+
+  run();
+})();
+</script>
+
+</body>
+</html>

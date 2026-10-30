@@ -277,6 +277,7 @@
   <nav class="sitenav" aria-label="Site">
     <a href="index.html">Drip Schedule Builder</a>
     <a href="mic-shift-assay.html">MIC Shift Assay Builder</a>
+    <a href="checkerboard-builder.html">Checkerboard Titration Builder</a>
     <a href="plate-prep-builder.html" aria-current="page">Plate Prep Builder</a>
   </nav>
 
@@ -394,20 +395,58 @@
         </div>
         <div class="field">
           <label for="concUnit">Concentration unit</label>
-          <input id="concUnit" type="text" value="&micro;g/mL">
+          <select id="concUnit">
+            <option value="ug/mL">&micro;g/mL (mass)</option>
+            <option value="uM">&micro;M (molar)</option>
+          </select>
         </div>
         <div class="field">
           <label for="stockConc">Stock concentration <span class="unit">addition mode only</span></label>
           <input id="stockConc" type="number" value="10000" min="0" step="1">
         </div>
       </div>
+      <div class="grid3" style="margin-top:12px;">
+        <div class="field">
+          <label for="mw">Molecular weight <span class="unit">g/mol</span></label>
+          <input id="mw" type="number" value="" min="0" step="any" placeholder="e.g. 349.4">
+        </div>
+      </div>
+      <p class="hint">Enter a molecular weight, then switch the concentration unit above to automatically convert the top and stock concentrations between &micro;g/mL and &micro;M.</p>
       <div id="dilVerdicts"></div>
     </div>
   </section>
 
   <section>
     <div class="sechead">
-      <h2>3 &middot; Live plate</h2>
+      <h2>3 &middot; Working stock preparation</h2>
+      <p>How much of the starting (source) stock solution and diluent to combine to make the working stock used by the dilution series above.</p>
+    </div>
+    <div class="panel">
+      <div class="grid3">
+        <div class="field">
+          <label for="sourceConc">Starting stock concentration</label>
+          <input id="sourceConc" type="number" value="" min="0" step="any" placeholder="e.g. 50000">
+        </div>
+        <div class="field">
+          <label for="sourceConcUnit">Starting stock unit</label>
+          <select id="sourceConcUnit">
+            <option value="ug/mL">&micro;g/mL (mass)</option>
+            <option value="uM">&micro;M (molar)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="overagePct">Overage <span class="unit">% extra to prepare</span></label>
+          <input id="overagePct" type="number" value="20" min="0" step="1">
+        </div>
+      </div>
+      <p class="hint">The working stock is the addition-mode spiking stock (section 2 "stock concentration") or, in transfer mode, the premixed well-1 top-concentration stock. Each block below can override its own source stock and target concentrations/factor; otherwise it inherits these defaults.</p>
+      <div class="panel" style="margin-top:12px;"><div class="tablewrap" id="workingStockTableWrap"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>4 &middot; Live plate</h2>
       <p>Wells are shaded by concentration (log scale); click a well for its volumes and to enter a recorded value.</p>
     </div>
     <div class="panel">
@@ -425,15 +464,15 @@
 
   <section>
     <div class="sechead">
-      <h2>4 &middot; Blocks / samples</h2>
-      <p>One row per block (= one sample). A 2D plate always has a single block.</p>
+      <h2>5 &middot; Blocks / samples</h2>
+      <p>One row per block (= one sample). A 2D plate always has a single block. Tick "Custom" to give a block its own dilution factor, top/stock concentration, unit, molecular weight, and source stock &mdash; e.g. factors X, Y, Z run side by side on the same plate.</p>
     </div>
     <div class="panel"><div class="tablewrap" id="blocksTableWrap"></div></div>
   </section>
 
   <section>
     <div class="sechead">
-      <h2>5 &middot; Generated prep steps</h2>
+      <h2>6 &middot; Generated prep steps</h2>
       <p>One row per dilution-series step; repeat across every block and replicate listed.</p>
     </div>
     <div class="panel"><div class="tablewrap" id="stepsTableWrap"></div></div>
@@ -441,7 +480,7 @@
 
   <section>
     <div class="sechead">
-      <h2>6 &middot; Well-by-well data entry</h2>
+      <h2>7 &middot; Well-by-well data entry</h2>
       <p>Enter a recorded value and notes per well. Feeds the FAIR export's <code>sample_values.csv</code>.</p>
     </div>
     <div class="panel">
@@ -455,7 +494,7 @@
 
   <section>
     <div class="sechead">
-      <h2>7 &middot; Dataset metadata &amp; FAIR export</h2>
+      <h2>8 &middot; Dataset metadata &amp; FAIR export</h2>
       <p>Everything above, plus this metadata, is packaged as a Frictionless tabular data package.</p>
     </div>
     <div class="panel">
@@ -481,16 +520,16 @@
 
   <section>
     <div class="sechead">
-      <h2>8 &middot; Bench procedure</h2>
-      <p>A general run order; the exact volumes and pipettes are in sections 5 and 7.</p>
+      <h2>9 &middot; Bench procedure</h2>
+      <p>A general run order; the exact volumes and pipettes are in sections 3, 6 and 8.</p>
     </div>
     <div class="panel">
       <ol class="steps">
-        <li><strong>Set the plate, layout, and dilution mode</strong> in sections 1&ndash;2 to match the samples on hand.</li>
-        <li><strong>Prepare diluent and (for addition mode) stock</strong> at the volumes listed in section 5, using the recommended pipette for each step.</li>
+        <li><strong>Set the plate, layout, and dilution mode</strong> in sections 1&ndash;2 to match the samples on hand, and set the working stock preparation in section 3.</li>
+        <li><strong>Prepare diluent and (for addition mode) stock</strong> at the volumes listed in sections 3 and 6, using the recommended pipette for each step.</li>
         <li><strong>Dispense or transfer in series order</strong>, well 1 (top concentration) through the last step, repeating the same per-step volumes for every block/replicate.</li>
         <li><strong>If using the 8-tube-strip workflow</strong>, prepare the full series in the strip with the adjustable P20 first, then transfer to the plate with the matching multichannel pipette.</li>
-        <li><strong>Record values as you read them</strong> in section 6 &mdash; the plate view and export update immediately.</li>
+        <li><strong>Record values as you read them</strong> in section 7 &mdash; the plate view and export update immediately.</li>
       </ol>
     </div>
   </section>
@@ -514,7 +553,8 @@
 
   var DESIGN_IDS = ["plateFormat","dimMode","seriesAxis","rowGroupsSel","colGroupsSel","blankWell",
     "p16Min","p16Max","p12Min","p12Max","p20Min","p20Max","stripWorkflow",
-    "dilMode","dilFactor","wellVol","topConc","concUnit","stockConc"];
+    "dilMode","dilFactor","wellVol","topConc","concUnit","stockConc","mw",
+    "sourceConc","sourceConcUnit","overagePct"];
   var METAIDS = ["mTitle","mAuthor","mOrcid","mOrg","mRun","mHypothesis","mDesc"];
   var el = {};
   DESIGN_IDS.concat(METAIDS).forEach(function(k){ el[k] = document.getElementById(k); });
@@ -548,6 +588,19 @@
     var out = [];
     for(var i=1;i<=n;i++){ if(n%i===0) out.push(i); }
     return out;
+  }
+
+  // ---------- mass <-> molar concentration ----------
+  function unitLabel(u){ return u === "uM" ? "\u00b5M" : "\u00b5g/mL"; }
+  function massToMolar(ugPerML, mw){ return ugPerML * 1000 / mw; }   // ug/mL -> uM
+  function molarToMass(uM, mw){ return uM * mw / 1000; }             // uM -> ug/mL
+  function convertConc(value, fromUnit, toUnit, mw){
+    if(value == null || !isFinite(value)) return NaN;
+    if(fromUnit === toUnit) return value;
+    if(!(mw > 0)) return NaN;
+    if(fromUnit === "ug/mL" && toUnit === "uM") return massToMolar(value, mw);
+    if(fromUnit === "uM" && toUnit === "ug/mL") return molarToMass(value, mw);
+    return NaN;
   }
   function status(id, msg, isErr){
     document.getElementById(id).innerHTML =
@@ -603,8 +656,12 @@
     var factor = Math.max(num(el.dilFactor.value, 10), 1.0001);
     var wellVol = Math.max(num(el.wellVol.value, 100), 0.001);
     var topConc = Math.max(num(el.topConc.value, 0), 0);
-    var concUnit = el.concUnit.value || "";
+    var concUnit = el.concUnit.value === "uM" ? "uM" : "ug/mL";
     var stockConc = Math.max(num(el.stockConc.value, 0), 0);
+    var mw = num(el.mw.value, null);
+    var sourceConc = Math.max(num(el.sourceConc.value, 0), 0);
+    var sourceConcUnit = el.sourceConcUnit.value === "uM" ? "uM" : "ug/mL";
+    var overagePct = Math.max(num(el.overagePct.value, 20), 0);
 
     var pip = {
       p16: {min:num(el.p16Min.value,0), max:num(el.p16Max.value,0)},
@@ -618,29 +675,78 @@
       numBlocks:numBlocks, seriesAxis:seriesAxis, seriesLen:seriesLen, replicates:replicates,
       blankWell:blankWell, concSteps:concSteps,
       mode:mode, factor:factor, wellVol:wellVol, topConc:topConc, concUnit:concUnit, stockConc:stockConc,
+      mw:mw, sourceConc:sourceConc, sourceConcUnit:sourceConcUnit, overagePct:overagePct,
       pip:pip, stripWorkflow: el.stripWorkflow.checked
     };
+  }
+
+  // Effective (block-aware) reagent/concentration config: a block can override
+  // the dilution factor, top/stock concentration, unit, molecular weight, and
+  // source stock; otherwise it inherits the section 2/3 defaults in D.
+  function effBlock(D, bi){
+    var b = blocks[bi] || {};
+    var ov = !!b.override;
+    function pick(f, fallback){
+      if(!ov) return fallback;
+      var v = b[f];
+      if(v === undefined || v === null || v === "") return fallback;
+      var n = num(v, null);
+      return n == null ? fallback : n;
+    }
+    return {
+      factor: Math.max(pick("factor", D.factor), 1.0001),
+      topConc: Math.max(pick("topConc", D.topConc), 0),
+      concUnit: (ov && (b.concUnit === "ug/mL" || b.concUnit === "uM")) ? b.concUnit : D.concUnit,
+      stockConc: Math.max(pick("stockConc", D.stockConc), 0),
+      mw: pick("mw", D.mw),
+      sourceConc: Math.max(pick("sourceConc", D.sourceConc), 0),
+      sourceConcUnit: (ov && (b.sourceConcUnit === "ug/mL" || b.sourceConcUnit === "uM")) ? b.sourceConcUnit : D.sourceConcUnit,
+      overagePct: Math.max(pick("overagePct", D.overagePct), 0),
+      override: ov
+    };
+  }
+
+  function edSignature(ed){
+    return [ed.factor, ed.topConc, ed.concUnit, ed.stockConc, ed.mw, ed.sourceConc, ed.sourceConcUnit, ed.overagePct].join("|");
+  }
+
+  // Group blocks that share the exact same effective reagent config, so the
+  // steps / working-stock tables show one row-set per distinct factor (X, Y, Z...).
+  function blockGroups(D){
+    var groups = [], map = {};
+    for(var bi=0; bi<D.numBlocks; bi++){
+      var ed = effBlock(D, bi);
+      var sig = edSignature(ed);
+      if(!map[sig]){ map[sig] = {ed:ed, blockIdx:[]}; groups.push(map[sig]); }
+      map[sig].blockIdx.push(bi);
+    }
+    return groups;
+  }
+
+  function groupLabel(D, g){
+    return g.blockIdx.map(function(bi){ return blockLabel(D, bi); }).join(", ");
   }
 
   function blockLabel(D, bi){
     return (blocks[bi] && blocks[bi].label) ? blocks[bi].label : ("Sample "+(bi+1));
   }
 
-  function concAt(D, stepIdx, isBlank){
+  function concAt(ed, stepIdx, isBlank){
     if(isBlank) return 0;
-    return D.topConc / Math.pow(D.factor, stepIdx);
+    return ed.topConc / Math.pow(ed.factor, stepIdx);
   }
 
-  // Per-series-step volumes, shared by every block/replicate at that step.
-  function stepVolumes(D, stepIdx, isBlank){
-    var c = concAt(D, stepIdx, isBlank);
+  // Per-series-step volumes for one block's effective reagent config (ed),
+  // shared by every replicate of that block at a given step.
+  function stepVolumes(D, ed, stepIdx, isBlank){
+    var c = concAt(ed, stepIdx, isBlank);
     if(D.mode === "addition"){
-      var stockVol = (isBlank || D.stockConc <= 0) ? 0 : D.wellVol * c / D.stockConc;
+      var stockVol = (isBlank || ed.stockConc <= 0) ? 0 : D.wellVol * c / ed.stockConc;
       var diluentVol = D.wellVol - stockVol;
       return {conc:c, stockVol:stockVol, diluentVol:diluentVol, transferVol:null,
         invalid: !isBlank && (stockVol <= 0 || stockVol > D.wellVol)};
     }
-    var Vt = D.wellVol / (D.factor - 1);
+    var Vt = D.wellVol / (ed.factor - 1);
     if(isBlank){
       return {conc:0, stockVol:0, diluentVol:D.wellVol, transferVol:null, invalid:false};
     }
@@ -673,14 +779,16 @@
         var stepIdx = D.seriesAxis === "col" ? localCol : localRow;
         var replicateIdx = D.seriesAxis === "col" ? localRow : localCol;
         var isBlank = D.blankWell && stepIdx === D.seriesLen - 1;
-        var v = stepVolumes(D, stepIdx, isBlank);
+        var ed = effBlock(D, bi);
+        var v = stepVolumes(D, ed, stepIdx, isBlank);
         var criticalVol = D.mode === "addition"
           ? (isBlank ? null : Math.min(v.stockVol, v.diluentVol > 0 ? v.diluentVol : v.stockVol))
           : (v.transferVol != null ? v.transferVol : v.stockVol);
         out.push({
           id: D.rowLabels[r] + (c+1), row:r, col:c, block:bi,
           stepIdx: stepIdx, replicateIdx: replicateIdx, isBlank: isBlank,
-          conc: v.conc, stockVol: v.stockVol, diluentVol: v.diluentVol, transferVol: v.transferVol,
+          conc: v.conc, concUnit: ed.concUnit, mw: ed.mw,
+          stockVol: v.stockVol, diluentVol: v.diluentVol, transferVol: v.transferVol,
           invalid: v.invalid, pipette: isBlank ? null : recommendPipette(D, criticalVol)
         });
       }
@@ -688,14 +796,60 @@
     return out;
   }
 
-  function seriesSteps(D){
+  function seriesStepsForED(D, ed){
     var out = [];
     for(var s=0;s<D.seriesLen;s++){
       var isBlank = D.blankWell && s === D.seriesLen - 1;
-      var v = stepVolumes(D, s, isBlank);
+      var v = stepVolumes(D, ed, s, isBlank);
       out.push({stepIdx:s, isBlank:isBlank, conc:v.conc, stockVol:v.stockVol, diluentVol:v.diluentVol, transferVol:v.transferVol, invalid:v.invalid});
     }
     return out;
+  }
+
+  // ---------- working stock preparation ----------
+  // Total volume of working stock (addition-mode spiking stock, or the
+  // transfer-mode well-1 premix) required for ONE block at this effective config.
+  function requiredWorkingStockVolume(D, ed){
+    if(D.mode === "addition"){
+      var total = 0;
+      for(var s=0;s<D.seriesLen;s++){
+        var isBlank = D.blankWell && s === D.seriesLen - 1;
+        var v = stepVolumes(D, ed, s, isBlank);
+        if(!isBlank && v.stockVol > 0) total += v.stockVol;
+      }
+      return total * D.replicates;
+    }
+    return D.wellVol * D.replicates; // transfer mode: only well 1 needs the premix
+  }
+
+  // From a starting/source stock solution, compute the volume of source stock
+  // and diluent needed to prepare the working stock at its target concentration.
+  function workingStockPrep(D, ed, numBlocksInGroup){
+    var perBlockVol = requiredWorkingStockVolume(D, ed);
+    var totalNeeded = perBlockVol * numBlocksInGroup;
+    var prepVol = totalNeeded * (1 + ed.overagePct/100);
+    var targetConc = D.mode === "addition" ? ed.stockConc : ed.topConc;
+    var targetUnit = ed.concUnit;
+    var sourceConc = ed.sourceConc;
+    var sourceUnit = ed.sourceConcUnit;
+    var sourceVol = null, diluentVol = null, invalid = false;
+    if(targetConc <= 0 || prepVol <= 0){
+      sourceVol = 0; diluentVol = prepVol;
+    } else {
+      var targetInSourceUnit = convertConc(targetConc, targetUnit, sourceUnit, ed.mw);
+      if(sourceConc > 0 && isFinite(targetInSourceUnit)){
+        sourceVol = prepVol * targetInSourceUnit / sourceConc;
+        diluentVol = prepVol - sourceVol;
+        invalid = sourceVol <= 0 || sourceVol > prepVol;
+      } else {
+        invalid = true;
+      }
+    }
+    return {
+      totalNeeded:totalNeeded, prepVol:prepVol, targetConc:targetConc, targetUnit:targetUnit,
+      sourceConc:sourceConc, sourceUnit:sourceUnit, overagePct:ed.overagePct,
+      sourceVol:sourceVol, diluentVol:diluentVol, invalid:invalid
+    };
   }
 
   // ---------- plate SVG ----------
@@ -711,7 +865,7 @@
   function renderPlate(D, W){
     var cell = D.cols > 16 ? 22 : 30, pad = 28;
     var w = pad + D.cols*cell + 10, h = pad + D.rows*cell + 10;
-    var maxConc = D.topConc;
+    var maxConc = W.reduce(function(m, wl){ return wl.isBlank ? m : Math.max(m, wl.conc); }, D.topConc);
     var s = '<svg class="plate" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Plate layout">';
     for(var c=0;c<D.cols;c++){
       s += '<text x="'+(pad+c*cell+cell/2)+'" y="16" text-anchor="middle" font-size="10">'+(c+1)+'</text>';
@@ -745,7 +899,7 @@
       '<dl>'+
         '<dt>Block / sample</dt><dd>'+esc(blockLabel(D, wl.block))+'</dd>'+
         '<dt>Series step</dt><dd>'+(wl.isBlank ? "blank" : (wl.stepIdx+1)+" / "+D.concSteps)+'</dd>'+
-        '<dt>Concentration</dt><dd>'+(wl.isBlank ? "0" : nz(wl.conc,4))+' '+esc(D.concUnit)+'</dd>'+
+        '<dt>Concentration</dt><dd>'+(wl.isBlank ? "0" : nz(wl.conc,4))+' '+esc(unitLabel(wl.concUnit))+'</dd>'+
         '<dt>Volumes</dt><dd>'+volLine+'</dd>'+
         '<dt>Pipette</dt><dd>'+(wl.pipette || (wl.isBlank ? "n/a" : "none configured")) +'</dd>'+
       '</dl>'+
@@ -762,45 +916,94 @@
   // ---------- tables ----------
   function renderBlocksTable(D){
     var rows = [];
+    var unitOpts = function(sel){
+      return '<option value="ug/mL"'+(sel==="ug/mL"?" selected":"")+'>\u00b5g/mL</option>'+
+             '<option value="uM"'+(sel==="uM"?" selected":"")+'>\u00b5M</option>';
+    };
     for(var bi=0;bi<D.numBlocks;bi++){
       var b = blocks[bi] || {};
+      var ov = !!b.override;
+      var dis = ov ? "" : "disabled";
       rows.push('<tr><td>'+(bi+1)+'</td>'+
         '<td><input data-bi="'+bi+'" data-f="label" class="wide" type="text" value="'+esc(b.label||"")+'" placeholder="Sample '+(bi+1)+'"></td>'+
-        '<td><input data-bi="'+bi+'" data-f="notes" class="wide" type="text" value="'+esc(b.notes||"")+'"></td></tr>');
+        '<td><input data-bi="'+bi+'" data-f="notes" class="wide" type="text" value="'+esc(b.notes||"")+'"></td>'+
+        '<td><input data-bi="'+bi+'" data-f="override" type="checkbox" '+(ov?"checked":"")+'></td>'+
+        '<td><input data-bi="'+bi+'" data-f="factor" type="number" step="0.0001" min="1.0001" '+dis+' value="'+esc(b.factor!=null?b.factor:"")+'" placeholder="'+fmt(D.factor,4)+'"></td>'+
+        '<td><input data-bi="'+bi+'" data-f="topConc" type="number" step="any" min="0" '+dis+' value="'+esc(b.topConc!=null?b.topConc:"")+'" placeholder="'+fmt(D.topConc,4)+'"></td>'+
+        '<td><select data-bi="'+bi+'" data-f="concUnit" '+dis+'>'+unitOpts(b.concUnit)+'</select></td>'+
+        '<td><input data-bi="'+bi+'" data-f="stockConc" type="number" step="any" min="0" '+dis+' value="'+esc(b.stockConc!=null?b.stockConc:"")+'" placeholder="'+fmt(D.stockConc,4)+'"></td>'+
+        '<td><input data-bi="'+bi+'" data-f="mw" type="number" step="any" min="0" '+dis+' value="'+esc(b.mw!=null?b.mw:"")+'" placeholder="'+(D.mw?fmt(D.mw,2):"")+'"></td>'+
+        '<td><input data-bi="'+bi+'" data-f="sourceConc" type="number" step="any" min="0" '+dis+' value="'+esc(b.sourceConc!=null?b.sourceConc:"")+'" placeholder="'+(D.sourceConc?fmt(D.sourceConc,4):"")+'"></td>'+
+        '<td><select data-bi="'+bi+'" data-f="sourceConcUnit" '+dis+'>'+unitOpts(b.sourceConcUnit)+'</select></td></tr>');
     }
     document.getElementById("blocksTableWrap").innerHTML =
-      '<table><thead><tr><th>Block</th><th>Sample label</th><th>Notes</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
-    Array.prototype.forEach.call(document.querySelectorAll('#blocksTableWrap input'), function(inp){
-      inp.addEventListener("input", function(){
+      '<table><thead><tr><th>Block</th><th>Sample label</th><th>Notes</th><th>Custom</th><th>Factor &times;</th>'+
+      '<th>Top conc.</th><th>Unit</th><th>Stock conc.</th><th>MW g/mol</th><th>Source conc.</th><th>Source unit</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
+    Array.prototype.forEach.call(document.querySelectorAll('#blocksTableWrap input, #blocksTableWrap select'), function(inp){
+      var evt = (inp.type === "checkbox" || inp.tagName === "SELECT") ? "change" : "input";
+      inp.addEventListener(evt, function(){
         var bi = this.getAttribute("data-bi"), f = this.getAttribute("data-f");
-        blocks[bi] = blocks[bi] || {}; blocks[bi][f] = this.value; save(); run();
+        blocks[bi] = blocks[bi] || {};
+        blocks[bi][f] = (this.type === "checkbox") ? this.checked : this.value;
+        save(); run();
       });
     });
   }
 
   function renderStepsTable(D){
-    var steps = seriesSteps(D);
-    var rows = steps.map(function(st){
-      var action, vol;
-      if(st.isBlank){
-        action = "Fill with diluent only (blank / no-stock control)"; vol = st.diluentVol;
-      } else if(D.mode === "addition"){
-        action = "Add stock + diluent"; vol = st.stockVol;
-      } else if(st.stepIdx === 0){
-        action = "Fill with premixed working stock"; vol = st.transferVol;
-      } else {
-        action = "Transfer "+nz(st.transferVol,2)+" &micro;L from step "+st.stepIdx+" into diluent-filled well"; vol = st.transferVol;
+    var groups = blockGroups(D);
+    var showHeader = D.numBlocks > 1;
+    var rows = [];
+    groups.forEach(function(g){
+      var ed = g.ed;
+      if(showHeader){
+        rows.push('<tr class="grouprow"><td colspan="6">'+esc(groupLabel(D, g))+' &mdash; factor '+fmt(ed.factor,4)+
+          '&times;, top '+fmt(ed.topConc,4)+' '+esc(unitLabel(ed.concUnit))+
+          (D.mode==="addition" ? ", stock "+fmt(ed.stockConc,4)+' '+esc(unitLabel(ed.concUnit)) : "")+'</td></tr>');
       }
-      var pip = recommendPipette(D, st.isBlank ? st.diluentVol : vol);
-      return '<tr'+(st.invalid?' class="flagcell"':'')+'><td>'+(st.isBlank?"blank":st.stepIdx+1)+'</td>'+
-        '<td>'+action+'</td>'+
-        '<td>'+(st.isBlank?nz(st.diluentVol,2):(D.mode==="addition"?nz(st.stockVol,2)+' stock / '+nz(st.diluentVol,2)+' diluent':nz(st.transferVol,2)))+' &micro;L</td>'+
-        '<td>'+(pip||(st.isBlank?"n/a":"none configured"))+'</td>'+
-        '<td>'+(st.isBlank?"":nz(st.conc,4)+" "+esc(D.concUnit))+'</td>'+
-        '<td>repeat &times; '+D.replicates+' replicate(s) &times; '+D.numBlocks+' block(s)</td></tr>';
+      var steps = seriesStepsForED(D, ed);
+      steps.forEach(function(st){
+        var action, vol;
+        if(st.isBlank){
+          action = "Fill with diluent only (blank / no-stock control)"; vol = st.diluentVol;
+        } else if(D.mode === "addition"){
+          action = "Add stock + diluent"; vol = st.stockVol;
+        } else if(st.stepIdx === 0){
+          action = "Fill with premixed working stock"; vol = st.transferVol;
+        } else {
+          action = "Transfer "+nz(st.transferVol,2)+" &micro;L from step "+st.stepIdx+" into diluent-filled well"; vol = st.transferVol;
+        }
+        var pip = recommendPipette(D, st.isBlank ? st.diluentVol : vol);
+        rows.push('<tr'+(st.invalid?' class="flagcell"':'')+'><td>'+(st.isBlank?"blank":st.stepIdx+1)+'</td>'+
+          '<td>'+action+'</td>'+
+          '<td>'+(st.isBlank?nz(st.diluentVol,2):(D.mode==="addition"?nz(st.stockVol,2)+' stock / '+nz(st.diluentVol,2)+' diluent':nz(st.transferVol,2)))+' &micro;L</td>'+
+          '<td>'+(pip||(st.isBlank?"n/a":"none configured"))+'</td>'+
+          '<td>'+(st.isBlank?"":nz(st.conc,4)+" "+esc(unitLabel(ed.concUnit)))+'</td>'+
+          '<td>repeat &times; '+D.replicates+' replicate(s) &times; '+g.blockIdx.length+' block(s)</td></tr>');
+      });
     });
     document.getElementById("stepsTableWrap").innerHTML =
       '<table><thead><tr><th>Step</th><th>Action</th><th>Volume</th><th>Pipette</th><th>Concentration</th><th>Scope</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
+  }
+
+  function renderWorkingStockTable(D){
+    var groups = blockGroups(D);
+    var rows = groups.map(function(g){
+      var wsp = workingStockPrep(D, g.ed, g.blockIdx.length);
+      return '<tr'+(wsp.invalid?' class="flagcell"':'')+'>'+
+        '<td>'+esc(groupLabel(D, g))+'</td>'+
+        '<td>'+fmt(wsp.targetConc,4)+' '+esc(unitLabel(wsp.targetUnit))+'</td>'+
+        '<td>'+(wsp.sourceConc>0 ? fmt(wsp.sourceConc,4)+' '+esc(unitLabel(wsp.sourceUnit)) : "&mdash; (enter above)")+'</td>'+
+        '<td>'+fmt(wsp.totalNeeded,2)+' &micro;L</td>'+
+        '<td>'+fmt(wsp.overagePct,1)+'%</td>'+
+        '<td>'+fmt(wsp.prepVol,2)+' &micro;L</td>'+
+        '<td>'+(wsp.sourceVol!=null ? fmt(wsp.sourceVol,2)+' &micro;L' : "n/a")+'</td>'+
+        '<td>'+(wsp.diluentVol!=null ? fmt(wsp.diluentVol,2)+' &micro;L' : "n/a")+'</td>'+
+      '</tr>';
+    });
+    document.getElementById("workingStockTableWrap").innerHTML =
+      '<table><thead><tr><th>Block(s)</th><th>Working stock target</th><th>Source stock</th>'+
+      '<th>Volume needed</th><th>Overage</th><th>Prep volume</th><th>Take from source</th><th>Add diluent</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>';
   }
 
   function renderWellTable(D, W){
@@ -808,7 +1011,7 @@
       var rec = wellData[wl.id] || {};
       return '<tr><td>'+wl.id+'</td><td>'+esc(blockLabel(D, wl.block))+'</td>'+
         '<td>'+(wl.isBlank?"blank":wl.stepIdx+1)+'</td>'+
-        '<td>'+(wl.isBlank?"0":nz(wl.conc,4))+'</td>'+
+        '<td>'+(wl.isBlank?"0":nz(wl.conc,4)+" "+unitLabel(wl.concUnit))+'</td>'+
         '<td><input data-w="'+wl.id+'" data-f="value" class="'+(rec.value?'filled':'')+'" type="text" value="'+esc(rec.value||"")+'"></td>'+
         '<td><input data-w="'+wl.id+'" data-f="notes" class="wide" type="text" value="'+esc(rec.notes||"")+'"></td></tr>';
     });
@@ -826,14 +1029,22 @@
 
   function renderVerdicts(D){
     var msgs = [];
-    if(D.mode === "addition"){
-      if(D.stockConc <= D.topConc) msgs.push({t:"v-bad", tag:"check stock", m:"Stock concentration must exceed the top-well concentration, or the required stock volume will exceed the well volume."});
-    }
-    if(D.mode === "transfer" && D.wellVol/(D.factor-1) > D.wellVol){
-      msgs.push({t:"v-bad", tag:"check factor", m:"Transfer volume exceeds the well volume &mdash; use a dilution factor greater than 2."});
-    }
+    var groups = blockGroups(D);
+    groups.forEach(function(g){
+      var ed = g.ed, lbl = esc(groupLabel(D, g));
+      if(D.mode === "addition" && ed.stockConc <= ed.topConc){
+        msgs.push({t:"v-bad", tag:"check stock", m:"Stock concentration must exceed the top-well concentration for "+lbl+", or the required stock volume will exceed the well volume."});
+      }
+      if(D.mode === "transfer" && D.wellVol/(ed.factor-1) > D.wellVol){
+        msgs.push({t:"v-bad", tag:"check factor", m:"Transfer volume exceeds the well volume for "+lbl+" &mdash; use a dilution factor greater than 2."});
+      }
+      var wsp = workingStockPrep(D, ed, g.blockIdx.length);
+      if(wsp.invalid){
+        msgs.push({t:"v-bad", tag:"working stock", m:"For "+lbl+", the starting stock concentration (with its unit/molecular weight) can't be resolved to something above the working-stock target &mdash; check section 3."});
+      }
+    });
     var anyInvalid = wells(D).some(function(w){ return w.invalid; });
-    if(anyInvalid) msgs.push({t:"v-warn", tag:"volume flag", m:"One or more steps need a stock/transfer volume outside 0&ndash;well volume &mdash; see flagged rows in section 5."});
+    if(anyInvalid) msgs.push({t:"v-warn", tag:"volume flag", m:"One or more steps need a stock/transfer volume outside 0&ndash;well volume &mdash; see flagged rows in section 6."});
     var anyNoPipette = wells(D).some(function(w){ return !w.isBlank && !w.pipette; });
     if(anyNoPipette) msgs.push({t:"v-warn", tag:"pipette", m:"Some steps fall outside every configured pipette range &mdash; widen a range in section 1 or use a single-channel pipette."});
     if(!msgs.length) msgs.push({t:"v-ok", tag:"ok", m:"Design is internally consistent: every step volume is within 0\u2013well volume and has a recommended pipette."});
@@ -844,7 +1055,7 @@
 
   // ---------- FAIR export ----------
   function tableSpecs(D, W){
-    var steps = seriesSteps(D);
+    var groups = blockGroups(D);
     return [
       {
         name:"protocol_parameters",
@@ -859,6 +1070,9 @@
           ["replicates_per_step", D.replicates], ["blank_well", D.blankWell],
           ["dilution_mode", D.mode], ["dilution_factor", D.factor], ["well_volume_uL", D.wellVol],
           ["top_concentration", D.topConc], ["concentration_unit", D.concUnit], ["stock_concentration", D.stockConc],
+          ["molecular_weight_g_per_mol", D.mw==null?"":D.mw],
+          ["source_stock_concentration", D.sourceConc], ["source_stock_concentration_unit", D.sourceConcUnit],
+          ["working_stock_overage_percent", D.overagePct],
           ["pipette_16ch_min_uL", D.pip.p16.min], ["pipette_16ch_max_uL", D.pip.p16.max],
           ["pipette_12ch_min_uL", D.pip.p12.min], ["pipette_12ch_max_uL", D.pip.p12.max],
           ["pipette_p20_min_uL", D.pip.p20.min], ["pipette_p20_max_uL", D.pip.p20.max],
@@ -876,7 +1090,8 @@
           {name:"block_label", label:"Sample", type:"string", description:"User-entered sample label for the block"},
           {name:"series_step", label:"Step", type:"integer", description:"1-indexed dilution series step, blank if a no-stock control well"},
           {name:"is_blank", label:"Blank", type:"boolean", description:"True if this well is the reserved no-stock blank/control"},
-          {name:"concentration", label:"Concentration", type:"number", description:"Well concentration", unit:D.concUnit},
+          {name:"concentration", label:"Concentration", type:"number", description:"Well concentration"},
+          {name:"concentration_unit", label:"Unit", type:"string", description:"Mass (ug/mL) or molar (uM) unit for this well's concentration"},
           {name:"fill_volume_uL", label:"Fill volume", type:"number", description:"Total final volume in the well", unit:"uL"},
           {name:"diluent_volume_uL", label:"Diluent volume", type:"number", description:"Diluent volume added to the well", unit:"uL"},
           {name:"stock_or_transfer_volume_uL", label:"Stock/transfer volume", type:"number", description:"Addition-mode stock volume, or transfer-mode carryover volume", unit:"uL"},
@@ -884,7 +1099,8 @@
         ],
         rows: W.map(function(w){
           return [w.id, w.row, w.col, w.block, blockLabel(D, w.block), w.isBlank?"":(w.stepIdx+1), w.isBlank,
-            w.isBlank?0:fmt(w.conc,4), fmt(D.wellVol,2), fmt(w.diluentVol,2),
+            w.isBlank?0:fmt(w.conc,4), w.concUnit,
+            fmt(D.wellVol,2), fmt(w.diluentVol,2),
             w.mode==="addition"?fmt(w.stockVol,2):(w.transferVol==null?"":fmt(w.transferVol,2)),
             w.pipette||""];
         })
@@ -893,6 +1109,7 @@
         name:"prep_steps",
         title:"Prep steps",
         fields:[
+          {name:"block_scope", label:"Block(s)", type:"string", description:"Sample(s)/block(s) this row applies to"},
           {name:"step_no", label:"Step", type:"string", description:"Series step number, or blank"},
           {name:"action", label:"Action", type:"string", description:"What to do at this step"},
           {name:"volume_uL", label:"Volume", type:"number", description:"Critical action volume", unit:"uL"},
@@ -900,13 +1117,41 @@
           {name:"concentration", label:"Concentration", type:"string", description:"Resulting well concentration"},
           {name:"scope", label:"Scope", type:"string", description:"How many replicates/blocks this step is repeated for"}
         ],
-        rows: steps.map(function(st){
-          var action = st.isBlank ? "Fill with diluent only (blank/control)"
-            : (D.mode === "addition" ? "Add stock + diluent"
-               : (st.stepIdx===0 ? "Fill with premixed working stock" : "Transfer from previous step into diluent-filled well"));
-          var vol = st.isBlank ? st.diluentVol : (D.mode==="addition" ? st.stockVol : st.transferVol);
-          return [st.isBlank?"blank":(st.stepIdx+1), action, fmt(vol,2), recommendPipette(D, vol)||"", st.isBlank?"0":fmt(st.conc,4)+" "+D.concUnit,
-            "x"+D.replicates+" replicates x "+D.numBlocks+" blocks"];
+        rows: groups.reduce(function(acc, g){
+          var ed = g.ed, lbl = groupLabel(D, g);
+          seriesStepsForED(D, ed).forEach(function(st){
+            var action = st.isBlank ? "Fill with diluent only (blank/control)"
+              : (D.mode === "addition" ? "Add stock + diluent"
+                 : (st.stepIdx===0 ? "Fill with premixed working stock" : "Transfer from previous step into diluent-filled well"));
+            var vol = st.isBlank ? st.diluentVol : (D.mode==="addition" ? st.stockVol : st.transferVol);
+            acc.push([lbl, st.isBlank?"blank":(st.stepIdx+1), action, fmt(vol,2), recommendPipette(D, vol)||"",
+              st.isBlank?"0":fmt(st.conc,4)+" "+ed.concUnit,
+              "x"+D.replicates+" replicates x "+g.blockIdx.length+" blocks"]);
+          });
+          return acc;
+        }, [])
+      },
+      {
+        name:"working_stock_prep",
+        title:"Working stock preparation",
+        fields:[
+          {name:"block_scope", label:"Block(s)", type:"string", description:"Sample(s)/block(s) this working stock supplies"},
+          {name:"target_concentration", label:"Working stock target", type:"number", description:"Concentration the working stock must be prepared at"},
+          {name:"target_unit", label:"Target unit", type:"string", description:"Mass (ug/mL) or molar (uM) unit of the target concentration"},
+          {name:"source_concentration", label:"Source concentration", type:"number", description:"Concentration of the starting/source stock solution on hand"},
+          {name:"source_unit", label:"Source unit", type:"string", description:"Mass (ug/mL) or molar (uM) unit of the source concentration"},
+          {name:"molecular_weight_g_per_mol", label:"MW", type:"number", description:"Molecular weight used to convert between mass and molar units"},
+          {name:"volume_needed_uL", label:"Volume needed", type:"number", description:"Working-stock volume consumed across the plate before overage", unit:"uL"},
+          {name:"overage_percent", label:"Overage", type:"number", description:"Extra percentage prepared above the volume needed"},
+          {name:"prep_volume_uL", label:"Prep volume", type:"number", description:"Total working-stock volume to prepare, including overage", unit:"uL"},
+          {name:"source_volume_uL", label:"Source volume", type:"number", description:"Volume of the source/starting stock solution to take", unit:"uL"},
+          {name:"diluent_volume_uL", label:"Diluent volume", type:"number", description:"Volume of diluent to add to the source stock to reach the prep volume", unit:"uL"}
+        ],
+        rows: groups.map(function(g){
+          var wsp = workingStockPrep(D, g.ed, g.blockIdx.length);
+          return [groupLabel(D, g), fmt(wsp.targetConc,4), wsp.targetUnit, wsp.sourceConc>0?fmt(wsp.sourceConc,4):"",
+            wsp.sourceUnit, g.ed.mw==null?"":g.ed.mw, fmt(wsp.totalNeeded,2), fmt(wsp.overagePct,1), fmt(wsp.prepVol,2),
+            wsp.sourceVol==null?"":fmt(wsp.sourceVol,2), wsp.diluentVol==null?"":fmt(wsp.diluentVol,2)];
         })
       },
       {
@@ -924,7 +1169,7 @@
         rows: W.map(function(w){
           var rec = wellData[w.id] || {};
           return [w.id, w.block, blockLabel(D, w.block), w.isBlank?"blank":(w.stepIdx+1),
-            w.isBlank?"0":fmt(w.conc,4), rec.value||"", rec.notes||""];
+            w.isBlank?"0":fmt(w.conc,4)+" "+w.concUnit, rec.value||"", rec.notes||""];
         })
       }
     ];
@@ -966,6 +1211,8 @@
         series_axis: D.seriesAxis, series_steps: D.concSteps, replicates_per_step: D.replicates, blank_well: D.blankWell,
         dilution_mode: D.mode, dilution_factor: D.factor, well_volume_uL: D.wellVol,
         top_concentration: D.topConc, concentration_unit: D.concUnit, stock_concentration: D.stockConc,
+        molecular_weight_g_per_mol: D.mw, source_stock_concentration: D.sourceConc,
+        source_stock_concentration_unit: D.sourceConcUnit, working_stock_overage_percent: D.overagePct,
         strip_workflow: D.stripWorkflow,
         hypothesis: m.mHypothesis || null,
         contains_simulated_values: synthetic
@@ -979,8 +1226,11 @@
           "Addition-mode wells are spiked directly, so every well shares the same stock and diluent sources with no well-to-well carryover.",
           "Transfer-mode wells use the generalized classic technique Vt = well_volume / (factor - 1); well 1 is a separately premixed working stock.",
           "A blank/control well, when reserved, receives diluent only and is excluded from the dilution-factor series.",
+          "Mass <-> molar conversion uses uM = (ug/mL * 1000) / molecular_weight_g_per_mol; it requires a molecular weight and is only as accurate as the value entered.",
+          "Working stock preparation assumes simple dilution (V1*C1 = V2*C2) of a single starting/source stock solution with no evaporation or mixing loss.",
+          "Blocks/samples marked custom in data/working_stock_prep.csv and data/prep_steps.csv override the default factor/concentration/source stock for that block only.",
           "Pipette recommendations are volume-range based only; they do not model physical channel pitch versus block geometry.",
-          "Recorded values and notes are exactly what was typed into section 6 for this run; they are not independently verified."
+          "Recorded values and notes are exactly what was typed into section 7 for this run; they are not independently verified."
         ]
       },
       resources: specs.map(function(sp){
@@ -1014,13 +1264,19 @@
     [["Investigator",m.mAuthor],["ORCID",m.mOrcid],["Institution",m.mOrg],["Run / plate ID",m.mRun],
      ["Plate format",D.format+"-well"],["Layout",D.dim], ["Blocks",D.numBlocks],
      ["Dilution mode",D.mode],["Dilution factor",fmt(D.factor,4)],["Well volume (\u00b5L)",fmt(D.wellVol,2)],
-     ["Top concentration",fmt(D.topConc,4)+" "+D.concUnit],["Stock concentration",fmt(D.stockConc,4)+" "+D.concUnit]
+     ["Top concentration",fmt(D.topConc,4)+" "+unitLabel(D.concUnit)],["Stock concentration",fmt(D.stockConc,4)+" "+unitLabel(D.concUnit)],
+     ["Molecular weight",D.mw?fmt(D.mw,2)+" g/mol":""],
+     ["Starting (source) stock",D.sourceConc?fmt(D.sourceConc,4)+" "+unitLabel(D.sourceConcUnit):""],
+     ["Working stock overage",fmt(D.overagePct,1)+"%"]
     ].forEach(function(p){ if(p[1]) L.push("| "+p[0]+" | "+p[1]+" |"); });
     L.push("");
     if(m.mHypothesis){ L.push("Hypothesis: "+m.mHypothesis); L.push(""); }
     L.push("## Method");
     L.push("");
     L.push("```text");
+    L.push("uM = (ug_per_mL * 1000) / molecular_weight_g_per_mol   (mass <-> molar conversion)");
+    L.push("working_stock_source_volume_uL = prep_volume_uL * target_concentration / source_concentration  (V1*C1 = V2*C2)");
+    L.push("working_stock_diluent_volume_uL = prep_volume_uL - working_stock_source_volume_uL");
     if(D.mode === "addition"){
       L.push("stock_volume_uL   = well_volume_uL * concentration / stock_concentration");
       L.push("diluent_volume_uL = well_volume_uL - stock_volume_uL");
@@ -1229,6 +1485,7 @@
     renderWellDetail(D, W);
     renderBlocksTable(D);
     renderStepsTable(D);
+    renderWorkingStockTable(D);
     renderWellTable(D, W);
     renderVerdicts(D);
     CUR = {D:D, W:W};
@@ -1236,7 +1493,26 @@
   }
 
   // ---------- events ----------
+  var lastConcUnit = el.concUnit.value;
   DESIGN_IDS.forEach(function(k){
+    if(k === "concUnit"){
+      el.concUnit.addEventListener("change", function(){
+        var mw = num(el.mw.value, null);
+        var newUnit = el.concUnit.value;
+        if(mw && mw > 0 && lastConcUnit && lastConcUnit !== newUnit){
+          [el.topConc, el.stockConc].forEach(function(inp){
+            var v = num(inp.value, null);
+            if(v != null){
+              var cv = convertConc(v, lastConcUnit, newUnit, mw);
+              if(isFinite(cv)) inp.value = fmt(cv, 4);
+            }
+          });
+        }
+        lastConcUnit = newUnit;
+        run();
+      });
+      return;
+    }
     el[k].addEventListener("input", run);
     el[k].addEventListener("change", run);
   });
