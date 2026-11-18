@@ -317,7 +317,7 @@
           </select>
         </div>
       </div>
-      <div class="field" style="margin-top:12px;"><label for="commonMixNote">Common assay mixture contents <span class="unit">optional note</span></label><textarea id="commonMixNote" placeholder="e.g. cells + enzyme substrate in assay buffer, 2x for this addition"></textarea></div>
+      <div class="field" style="margin-top:12px;"><label for="commonMixNote">Common assay mixture contents <span class="unit">optional note</span></label><textarea id="commonMixNote" placeholder="e.g. cells + enzyme substrate in assay buffer (4× for variable Z; included in 2× fixed-Z mix)"></textarea></div>
       <p class="hint" id="schemeHint" style="margin-top:10px;"></p>
       <div id="schemeVerdicts"></div>
     </div>
@@ -344,7 +344,7 @@
   <section>
     <div class="sechead">
       <h2>3 &middot; Working stock preparation</h2>
-      <p>How much of each factor's starting (source) stock solution and diluent to combine to make the 4&times;/3&times;/2&times; working solution the strips (or reservoir) are filled from.</p>
+      <p>How much of each factor's starting (source) stock solution and diluent to combine to make the working solution the strips (or reservoir) are filled from: 4&times; for variable Z, 2&times; for fixed Z, and 3&times; for the minimal scheme.</p>
     </div>
     <div class="panel">
       <div class="field" style="max-width:220px;"><label for="overagePct">Overage <span class="unit">% extra to prepare</span></label><input id="overagePct" type="number" value="20" min="0" step="1"></div>
@@ -630,6 +630,9 @@
   function stockPrep(targetConc, targetUnit, prepVolume, factor){
     var sourceConc = factor.sourceConc, sourceUnit = factor.sourceUnit, mw = factor.mw;
     var prepVol = prepVolume * (1 + (num(el.overagePct.value,0)||0)/100);
+    if(targetConc === 0 && prepVolume > 0){
+      return {prepVol:prepVol, sourceVol:0, diluentVol:prepVol, valid:true, targetInSourceUnits:0};
+    }
     if(!(sourceConc > 0) || !(targetConc > 0) || !(prepVolume > 0)){
       return {prepVol:prepVol, sourceVol:null, diluentVol:null, valid:false, reason:"Enter a starting stock concentration."};
     }
@@ -744,13 +747,13 @@
   function wireFactorInputs(){
     var map = {Cmax:"Cmax", Unit:"Unit", Mw:"Mw", SourceConc:"SourceConc", SourceUnit:"SourceUnit"};
     Array.prototype.forEach.call(document.querySelectorAll(".factorCmax"), function(i){
-      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"Cmax"].value = this.value; run(); });
+      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"Cmax"].value = this.value; run(true); });
     });
     Array.prototype.forEach.call(document.querySelectorAll(".factorMw"), function(i){
-      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"Mw"].value = this.value; run(); });
+      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"Mw"].value = this.value; run(true); });
     });
     Array.prototype.forEach.call(document.querySelectorAll(".factorSourceConc"), function(i){
-      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"SourceConc"].value = this.value; run(); });
+      i.addEventListener("input", function(){ el[this.getAttribute("data-k")+"SourceConc"].value = this.value; run(true); });
     });
     Array.prototype.forEach.call(document.querySelectorAll(".factorUnit"), function(sel){
       sel.addEventListener("change", function(){
@@ -759,7 +762,7 @@
         var oldUnit = el[k+"Unit"].value, newUnit = this.value;
         if(mw && mw>0 && oldUnit !== newUnit){
           var v = num(el[k+"Cmax"].value, null);
-          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)) el[k+"Cmax"].value = fmt(cv,4); }
+          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)) el[k+"Cmax"].value = String(cv); }
         }
         el[k+"Unit"].value = newUnit;
         run();
@@ -772,7 +775,7 @@
         var oldUnit = el[k+"SourceUnit"].value, newUnit = this.value;
         if(mw && mw>0 && oldUnit !== newUnit){
           var v = num(el[k+"SourceConc"].value, null);
-          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)) el[k+"SourceConc"].value = fmt(cv,4); }
+          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)) el[k+"SourceConc"].value = String(cv); }
         }
         el[k+"SourceUnit"].value = newUnit;
         run();
@@ -789,7 +792,7 @@
         return '<tr><td>'+name+'</td><td>'+fmt(p.targetConc,4)+' '+unitLabel(p.unit)+'</td><td>'+fmt(p.requiredVol,0)+' \u00b5L'+noteExtra+'</td><td colspan="4" class="flagcell">'+esc(p.prep.reason)+'</td></tr>';
       }
       return '<tr><td>'+name+'</td><td>'+fmt(p.targetConc,4)+' '+unitLabel(p.unit)+'</td><td>'+fmt(p.requiredVol,0)+' \u00b5L'+noteExtra+'</td>'+
-        '<td>'+fmt(factor.sourceConc,4)+' '+unitLabel(factor.sourceUnit)+'</td>'+
+        '<td>'+(p.targetConc===0 ? "Vehicle-only (no source stock)" : fmt(factor.sourceConc,4)+' '+unitLabel(factor.sourceUnit))+'</td>'+
         '<td>'+fmt(p.prep.prepVol,1)+' \u00b5L</td>'+
         '<td>'+fmt(p.prep.sourceVol,2)+' \u00b5L</td>'+
         '<td>'+fmt(p.prep.diluentVol,2)+' \u00b5L</td></tr>';
@@ -850,11 +853,16 @@
     });
   }
 
-  function recommendPipette(name){
+  function recommendPipette(name, D){
+    if(name==="x-fill" || name==="z-fill"){
+      return "Adjustable P100 ("+fmt(D.tube1Vol/2,0)+" \u00b5L \u00d7 2)";
+    }
+    if(name==="x-diluent" || name==="z-diluent"){
+      var split = D.midVol > 100 ? fmt(D.midVol/2,0)+" \u00b5L \u00d7 2" : fmt(D.midVol,0)+" \u00b5L \u00d7 1";
+      return "Adjustable P100 ("+split+")";
+    }
     return {
-      "x-fill":"Adjustable P20 (two dispenses)", "x-diluent":"Adjustable P20",
       "x-serial":"12-channel P100 (12 tubes loaded)", "x-add":"8-channel P20 (96-well then 384-well spacing)",
-      "z-fill":"Adjustable P20 (two dispenses)", "z-diluent":"Adjustable P20",
       "z-serial":"12-channel P100 (8 of 12 channels loaded)", "z-add":"8-channel P20",
       "reservoir":"16-channel P100 (one column at a time)"
     }[name] || "";
@@ -865,31 +873,31 @@
     var n = 0;
     function add(action, detail, volume, pipette){ steps.push({n:++n, action:action, detail:detail, volume:volume, pipette:pipette}); }
 
-    add("Fill X1\u2013X6 tube 1", "Each of 6 X strips, tube 1, with the X working solution", D.tube1Vol+" \u00b5L \u00d7 6 tubes", recommendPipette("x-fill"));
-    add("Fill X1\u2013X6 tubes 2\u20138", "Diluent, each of 6 X strips \u00d7 7 tubes", D.midVol+" \u00b5L \u00d7 42 tubes", recommendPipette("x-diluent"));
-    add("Serially dilute X1\u2013X6", "Position 1\u21922\u2192\u2026\u21927 across all 6 strips together, mixing before each transfer; discard one transfer volume from position 7", D.transferVol+" \u00b5L", recommendPipette("x-serial"));
-    add("Fill Y1\u2013Y6 tube 1", "Each of 6 Y strips, tube 1, with the Y working solution", D.tube1Vol+" \u00b5L \u00d7 6 tubes", recommendPipette("x-fill"));
-    add("Fill Y1\u2013Y6 tubes 2\u20138", "Diluent, each of 6 Y strips \u00d7 7 tubes", D.midVol+" \u00b5L \u00d7 42 tubes", recommendPipette("x-diluent"));
-    add("Serially dilute Y1\u2013Y6", "Position 1\u21922\u2192\u2026\u21927 across all 6 strips together, mixing before each transfer; discard one transfer volume from position 7", D.transferVol+" \u00b5L", recommendPipette("x-serial"));
+    add("Fill X1\u2013X6 tube 1", "Each of 6 X strips, tube 1, with the X working solution", D.tube1Vol+" \u00b5L \u00d7 6 tubes", recommendPipette("x-fill",D));
+    add("Fill X1\u2013X6 tubes 2\u20138", "Diluent, each of 6 X strips \u00d7 7 tubes", D.midVol+" \u00b5L \u00d7 42 tubes", recommendPipette("x-diluent",D));
+    add("Serially dilute X1\u2013X6", "Position 1\u21922\u2192\u2026\u21927 across all 6 strips together, mixing before each transfer; discard one transfer volume from position 7", D.transferVol+" \u00b5L", recommendPipette("x-serial",D));
+    add("Fill Y1\u2013Y6 tube 1", "Each of 6 Y strips, tube 1, with the Y working solution", D.tube1Vol+" \u00b5L \u00d7 6 tubes", recommendPipette("x-fill",D));
+    add("Fill Y1\u2013Y6 tubes 2\u20138", "Diluent, each of 6 Y strips \u00d7 7 tubes", D.midVol+" \u00b5L \u00d7 42 tubes", recommendPipette("x-diluent",D));
+    add("Serially dilute Y1\u2013Y6", "Position 1\u21922\u2192\u2026\u21927 across all 6 strips together, mixing before each transfer; discard one transfer volume from position 7", D.transferVol+" \u00b5L", recommendPipette("x-serial",D));
 
     if(D.zMode === "variable"){
-      add("Fill Z1 (8 tubes)", "All 8 tubes of Z1 with the Z working solution", D.tube1Vol+" \u00b5L \u00d7 8 tubes", recommendPipette("z-fill"));
-      add("Fill Z2\u2013Z6 (8 tubes each)", "Diluent/vehicle, 8 tubes \u00d7 5 strips", D.midVol+" \u00b5L \u00d7 40 tubes", recommendPipette("z-diluent"));
-      add("Serially dilute Z1\u2192Z2\u2192\u2192Z5", "Strip-to-strip, 8 loaded channels, mixing at each step; discard one transfer volume from every Z5 tube; do not transfer into Z6", D.transferVol+" \u00b5L", recommendPipette("z-serial"));
+      add("Fill Z1 (8 tubes)", "All 8 tubes of Z1 with the 4\u00d7 Z working solution", D.tube1Vol+" \u00b5L \u00d7 8 tubes", recommendPipette("z-fill",D));
+      add("Fill Z2\u2013Z6 (8 tubes each)", "Diluent/vehicle, 8 tubes \u00d7 5 strips", D.midVol+" \u00b5L \u00d7 40 tubes", recommendPipette("z-diluent",D));
+      add("Serially dilute Z1\u2192Z2\u2192\u2192Z5", "Strip-to-strip, 8 loaded channels, mixing at each step; discard one transfer volume from every Z5 tube; leave Z6 as the vehicle control", D.transferVol+" \u00b5L", recommendPipette("z-serial",D));
     } else {
-      add("Prepare Z working solution", D.scheme==="fixedZ" ? "2\u00d7 Z combined with common assay mixture, enough for the whole plate" : "Single Z working solution, enough for the whole plate", fmt(D.numWells*D.additionVolZ,0)+" \u00b5L (+ overage)", recommendPipette("reservoir"));
+      add("Prepare Z working solution", D.scheme==="fixedZ" ? "2\u00d7 Z combined with common assay mixture, enough for the whole plate" : "Single Z working solution, enough for the whole plate", fmt(D.numWells*D.additionVolZ,0)+" \u00b5L (+ overage)", recommendPipette("reservoir",D));
     }
 
     add("Add X to every block", "10 \u00b5L per well, across each block's 8 columns, highest concentration at column 1 of the block", D.additionVolX+" \u00b5L/well", recommendPipette("x-add"));
     add("Add Y to every block", "10 \u00b5L per well, down each block's 8 rows, highest concentration at row 1 of the block", D.additionVolY+" \u00b5L/well", recommendPipette("x-add"));
 
     if(D.scheme === "fixedZ"){
-      add("Add Z/common assay mixture", "20 \u00b5L per well, one full plate column at a time, A\u2013P in one pass", fmt(D.numWells*D.additionVolZ,0)+" \u00b5L total", recommendPipette("reservoir"));
+      add("Add Z/common assay mixture", "20 \u00b5L per well, one full plate column at a time, A\u2013P in one pass", fmt(D.numWells*D.additionVolZ,0)+" \u00b5L total", recommendPipette("reservoir",D));
     } else if(D.scheme === "variableZ"){
-      add("Add Z per block", "10 \u00b5L per well, from that block's Z strip", D.additionVolZ+" \u00b5L/well", recommendPipette("z-add"));
-      add("Add common assay mixture", "10 \u00b5L per well, one full plate column at a time", fmt(D.numWells*D.additionVolCommon,0)+" \u00b5L total", recommendPipette("reservoir"));
+      add("Add Z per block", "10 \u00b5L per well, from that block's Z strip", D.additionVolZ+" \u00b5L/well", recommendPipette("z-add",D));
+      add("Add common assay mixture", "10 \u00b5L per well, one full plate column at a time; prepare at 4\u00d7", fmt(D.numWells*D.additionVolCommon,0)+" \u00b5L total", recommendPipette("reservoir",D));
     } else {
-      add("Add Z per block", "10 \u00b5L per well, from that block's Z strip or reservoir", D.additionVolZ+" \u00b5L/well", recommendPipette("z-add"));
+      add("Add Z per block", "10 \u00b5L per well, from that block's Z strip or reservoir", D.additionVolZ+" \u00b5L/well", recommendPipette("z-add",D));
     }
     return steps;
   }
@@ -1336,17 +1344,19 @@
   })();
 
   // ---------- run loop ----------
-  function run(){
+  function run(skipFactorTable){
     var D = computeDesign();
     var W = wells(D);
     document.getElementById("schemeHint").textContent =
       D.numBlocks+" blocks of "+D.blockHeight+"\u00d7"+D.blockWidth+" wells ("+ (D.blockHeight*D.blockWidth) +" wells each), "+
-      D.wellVol+" \u00b5L/well, dilution factor r = "+fmt(D.r,4)+".";
+      D.wellVol+" \u00b5L/well, dilution factor r = "+fmt(D.r,4)+"."+
+      (D.scheme==="variableZ" ? " Variable-Z Z strips and common mixture: prepare both at 4\u00d7 for 10 \u00b5L additions to 40 \u00b5L final." :
+        D.scheme==="fixedZ" ? " Fixed-Z combined Z/common-mixture reservoir: prepare at 2\u00d7 for a 20 \u00b5L addition to 40 \u00b5L final." : "");
     document.getElementById("plateSvgWrap").innerHTML = renderPlate(D, W);
     Array.prototype.forEach.call(document.querySelectorAll('#plateSvgWrap .well'), function(c){
       c.addEventListener("click", function(){ selectedWell = this.getAttribute("data-well"); run(); });
     });
-    renderFactorTable(D);
+    if(!skipFactorTable) renderFactorTable(D);
     renderWorkingStockTable(D);
     renderRecipeTable(D);
     renderLadderTable(D);
