@@ -412,6 +412,7 @@
         </div>
       </div>
       <p class="hint">Enter a molecular weight, then switch the concentration unit above to automatically convert the top and stock concentrations between &micro;g/mL and &micro;M.</p>
+      <div id="unitRestoreWarning" class="statusmsg err" role="alert" hidden></div>
       <div id="dilVerdicts"></div>
     </div>
   </section>
@@ -561,6 +562,7 @@
 
   var blocks = {};     // blockIndex -> {label, notes}
   var wellData = {};   // wellId -> {value, notes}
+  var unitRestoreIssues = {};
   var synthetic = false;
   var selectedWell = null;
   var CUR = null;
@@ -601,6 +603,22 @@
     if(fromUnit === "ug/mL" && toUnit === "uM") return massToMolar(value, mw);
     if(fromUnit === "uM" && toUnit === "ug/mL") return molarToMass(value, mw);
     return NaN;
+  }
+  function normalizeConcUnit(value){
+    var unit = String(value == null ? "" : value).trim().replace(/[\u00b5\u03bc]/g,"u").replace(/\s+/g,"").toLowerCase();
+    if(unit === "ug/ml") return "ug/mL";
+    if(unit === "um") return "uM";
+    return null;
+  }
+  function updateUnitRestoreWarning(){
+    var warning = document.getElementById("unitRestoreWarning");
+    var issues = Object.keys(unitRestoreIssues);
+    warning.hidden = issues.length === 0;
+    warning.textContent = issues.length ? "Saved design has unsupported concentration unit(s): "+issues.map(function(k){ return k+" ("+String(unitRestoreIssues[k])+")"; }).join(", ")+". Select valid units to confirm them; autosave is paused until all are resolved." : "";
+  }
+  function resolveRestoredUnit(path){
+    delete unitRestoreIssues[path];
+    updateUnitRestoreWarning();
   }
   function status(id, msg, isErr){
     document.getElementById(id).innerHTML =
@@ -922,6 +940,7 @@
     };
     for(var bi=0;bi<D.numBlocks;bi++){
       var b = blocks[bi] || {};
+      var ed = effBlock(D, bi);
       var ov = !!b.override;
       var dis = ov ? "" : "disabled";
       rows.push('<tr><td>'+(bi+1)+'</td>'+
@@ -930,11 +949,11 @@
         '<td><input data-bi="'+bi+'" data-f="override" type="checkbox" '+(ov?"checked":"")+'></td>'+
         '<td><input data-bi="'+bi+'" data-f="factor" type="number" step="0.0001" min="1.0001" '+dis+' value="'+esc(b.factor!=null?b.factor:"")+'" placeholder="'+fmt(D.factor,4)+'"></td>'+
         '<td><input data-bi="'+bi+'" data-f="topConc" type="number" step="any" min="0" '+dis+' value="'+esc(b.topConc!=null?b.topConc:"")+'" placeholder="'+fmt(D.topConc,4)+'"></td>'+
-        '<td><select data-bi="'+bi+'" data-f="concUnit" '+dis+'>'+unitOpts(b.concUnit)+'</select></td>'+
+        '<td><select data-bi="'+bi+'" data-f="concUnit" '+dis+'>'+unitOpts(ed.concUnit)+'</select></td>'+
         '<td><input data-bi="'+bi+'" data-f="stockConc" type="number" step="any" min="0" '+dis+' value="'+esc(b.stockConc!=null?b.stockConc:"")+'" placeholder="'+fmt(D.stockConc,4)+'"></td>'+
         '<td><input data-bi="'+bi+'" data-f="mw" type="number" step="any" min="0" '+dis+' value="'+esc(b.mw!=null?b.mw:"")+'" placeholder="'+(D.mw?fmt(D.mw,2):"")+'"></td>'+
         '<td><input data-bi="'+bi+'" data-f="sourceConc" type="number" step="any" min="0" '+dis+' value="'+esc(b.sourceConc!=null?b.sourceConc:"")+'" placeholder="'+(D.sourceConc?fmt(D.sourceConc,4):"")+'"></td>'+
-        '<td><select data-bi="'+bi+'" data-f="sourceConcUnit" '+dis+'>'+unitOpts(b.sourceConcUnit)+'</select></td></tr>');
+        '<td><select data-bi="'+bi+'" data-f="sourceConcUnit" '+dis+'>'+unitOpts(ed.sourceConcUnit)+'</select></td></tr>');
     }
     document.getElementById("blocksTableWrap").innerHTML =
       '<table><thead><tr><th>Block</th><th>Sample label</th><th>Notes</th><th>Custom</th><th>Factor &times;</th>'+
@@ -945,7 +964,8 @@
         var bi = this.getAttribute("data-bi"), f = this.getAttribute("data-f");
         blocks[bi] = blocks[bi] || {};
         blocks[bi][f] = (this.type === "checkbox") ? this.checked : this.value;
-        save(); run();
+        if(f === "concUnit" || f === "sourceConcUnit") resolveRestoredUnit("blocks."+bi+"."+f);
+        save(); run(f !== "override");
       });
     });
   }
@@ -1441,6 +1461,7 @@
 
   // ---------- persistence ----------
   function save(){
+    if(Object.keys(unitRestoreIssues).length) return;
     try{
       var o = {design:{}, blocks:blocks, wellData:wellData, synthetic:synthetic};
       DESIGN_IDS.forEach(function(k){ o.design[k] = el[k].type === "checkbox" ? el[k].checked : el[k].value; });
@@ -1456,13 +1477,30 @@
       if(d){
         if(d.design) Object.keys(d.design).forEach(function(k){
           if(!el[k]) return;
-          if(el[k].type === "checkbox") el[k].checked = !!d.design[k]; else el[k].value = d.design[k];
+          if(el[k].type === "checkbox") el[k].checked = !!d.design[k];
+          else if(k === "concUnit" || k === "sourceConcUnit"){
+            var unit = normalizeConcUnit(d.design[k]);
+            if(unit) el[k].value = unit;
+            else if(d.design[k] != null && d.design[k] !== "") unitRestoreIssues["design."+k] = d.design[k];
+          } else el[k].value = d.design[k];
         });
-        if(d.blocks) blocks = d.blocks;
+        if(d.blocks){
+          blocks = d.blocks;
+          Object.keys(blocks).forEach(function(bi){
+            ["concUnit","sourceConcUnit"].forEach(function(k){
+              var raw = blocks[bi] && blocks[bi][k];
+              if(raw == null || raw === "") return;
+              var unit = normalizeConcUnit(raw);
+              if(unit) blocks[bi][k] = unit;
+              else unitRestoreIssues["blocks."+bi+"."+k] = raw;
+            });
+          });
+        }
         if(d.wellData) wellData = d.wellData;
         synthetic = !!d.synthetic;
       }
     }catch(e){}
+    updateUnitRestoreWarning();
     try{
       var m = JSON.parse(localStorage.getItem("plateprep_meta")||"null");
       if(m) METAIDS.forEach(function(k){ if(m[k]!=null) el[k].value = m[k]; });
@@ -1470,7 +1508,7 @@
   })();
 
   // ---------- run loop ----------
-  function run(){
+  function run(skipBlocksTable){
     populateGroupSelects();
     var D = computeDesign();
     var W = wells(D);
@@ -1483,7 +1521,7 @@
       c.addEventListener("click", function(){ selectedWell = this.getAttribute("data-well"); run(); });
     });
     renderWellDetail(D, W);
-    renderBlocksTable(D);
+    if(!skipBlocksTable) renderBlocksTable(D);
     renderStepsTable(D);
     renderWorkingStockTable(D);
     renderWellTable(D, W);
@@ -1499,22 +1537,26 @@
       el.concUnit.addEventListener("change", function(){
         var mw = num(el.mw.value, null);
         var newUnit = el.concUnit.value;
-        if(mw && mw > 0 && lastConcUnit && lastConcUnit !== newUnit){
+        if(mw && mw > 0 && lastConcUnit && lastConcUnit !== newUnit && !unitRestoreIssues["design.concUnit"]){
           [el.topConc, el.stockConc].forEach(function(inp){
             var v = num(inp.value, null);
             if(v != null){
               var cv = convertConc(v, lastConcUnit, newUnit, mw);
-              if(isFinite(cv)) inp.value = fmt(cv, 4);
+              if(isFinite(cv)) inp.value = String(cv);
             }
           });
         }
         lastConcUnit = newUnit;
+        resolveRestoredUnit("design.concUnit");
         run();
       });
       return;
     }
     el[k].addEventListener("input", run);
-    el[k].addEventListener("change", run);
+    el[k].addEventListener("change", function(){
+      if(k === "sourceConcUnit") resolveRestoredUnit("design.sourceConcUnit");
+      run();
+    });
   });
   METAIDS.forEach(function(k){
     el[k].addEventListener("input", function(){ saveMeta(); status("exportStatus",""); });
