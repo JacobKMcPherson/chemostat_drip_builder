@@ -317,7 +317,7 @@
           </select>
         </div>
       </div>
-      <div class="field" style="margin-top:12px;"><label for="commonMixNote">Common assay mixture contents <span class="unit">optional note</span></label><textarea id="commonMixNote" placeholder="e.g. cells + enzyme substrate in assay buffer, 2x for this addition"></textarea></div>
+      <div class="field" style="margin-top:12px;"><label for="commonMixNote">Common assay mixture contents <span class="unit">optional note</span></label><textarea id="commonMixNote" placeholder="e.g. cells + enzyme substrate in assay buffer; 2x for fixed Z, 4x for variable Z"></textarea></div>
       <p class="hint" id="schemeHint" style="margin-top:10px;"></p>
       <div id="schemeVerdicts"></div>
     </div>
@@ -452,7 +452,7 @@
         <li><strong>Set the scheme and recipe</strong> in section 1, the per-factor concentrations/units/MW in section 2, and the starting stocks/overage in section 3.</li>
         <li><strong>Prepare the X1&ndash;X6 and Y1&ndash;Y6 strips</strong> (and Z1&ndash;Z6 if Z is variable) with the tube volumes in section 4, arranged side by side in a 96-well-format strip holder so a 12-channel P100 can serially dilute all twelve (or twenty) tubes together, mixing before each transfer and discarding one transfer volume from the last diluted position. Leave the final position (tube 8, or Z6) untouched as the zero/vehicle control.</li>
         <li><strong>Add X, then Y</strong> with an adjustable 8-channel P20 at 96-well spacing (aspirate) then 384-well spacing (dispense): X across each block's columns 1&ndash;8, Y down each block's rows 1&ndash;8, highest concentration nearest the block's top-left corner.</li>
-        <li><strong>Add Z and/or the common assay mixture</strong> per section 7: fixed Z uses a single 2&times;Z/assay reservoir mix added 20&nbsp;&micro;L/well with a 16-channel P100; variable Z adds 10&nbsp;&micro;L/well from each block's Z strip, then 10&nbsp;&micro;L/well common mixture; the minimal scheme stops after X/Y/Z with no further addition.</li>
+        <li><strong>Add Z and/or the common assay mixture</strong> per section 7: fixed Z uses a single 2&times;Z/assay reservoir mix added 20&nbsp;&micro;L/well with a 16-channel P100; variable Z adds 10&nbsp;&micro;L/well from each block's Z strip, then 10&nbsp;&micro;L/well common mixture prepared at 4&times; final assay concentration (the fixed-Z mix is 2&times;); the minimal scheme stops after X/Y/Z with no further addition.</li>
         <li><strong>Replace tips once they have touched well liquid</strong> before returning to any source strip or reservoir, especially while dispensing Y across wells that already contain X.</li>
         <li><strong>Record values as you read them</strong> in section 8 &mdash; the plate view and export update immediately.</li>
       </ol>
@@ -630,6 +630,9 @@
   function stockPrep(targetConc, targetUnit, prepVolume, factor){
     var sourceConc = factor.sourceConc, sourceUnit = factor.sourceUnit, mw = factor.mw;
     var prepVol = prepVolume * (1 + (num(el.overagePct.value,0)||0)/100);
+    if(targetConc === 0 && prepVolume > 0){
+      return {prepVol:prepVol, sourceVol:0, diluentVol:prepVol, valid:true, targetInSourceUnits:0};
+    }
     if(!(sourceConc > 0) || !(targetConc > 0) || !(prepVolume > 0)){
       return {prepVol:prepVol, sourceVol:null, diluentVol:null, valid:false, reason:"Enter a starting stock concentration."};
     }
@@ -759,7 +762,7 @@
         var oldUnit = el[k+"Unit"].value, newUnit = this.value;
         if(mw && mw>0 && oldUnit !== newUnit){
           var v = num(el[k+"Cmax"].value, null);
-          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)) el[k+"Cmax"].value = fmt(cv,4); }
+          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)){ el[k+"Cmax"].value = String(cv); document.querySelector('.factorCmax[data-k="'+k+'"]').value = String(cv); } }
         }
         el[k+"Unit"].value = newUnit;
         run();
@@ -772,7 +775,7 @@
         var oldUnit = el[k+"SourceUnit"].value, newUnit = this.value;
         if(mw && mw>0 && oldUnit !== newUnit){
           var v = num(el[k+"SourceConc"].value, null);
-          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)) el[k+"SourceConc"].value = fmt(cv,4); }
+          if(v != null){ var cv = convertConc(v, oldUnit, newUnit, mw); if(isFinite(cv)){ el[k+"SourceConc"].value = String(cv); document.querySelector('.factorSourceConc[data-k="'+k+'"]').value = String(cv); } }
         }
         el[k+"SourceUnit"].value = newUnit;
         run();
@@ -852,9 +855,9 @@
 
   function recommendPipette(name){
     return {
-      "x-fill":"Adjustable P20 (two dispenses)", "x-diluent":"Adjustable P20",
+      "x-fill":"P100 (split volumes per recipe table)", "x-diluent":"P100 (split volumes per recipe table)",
       "x-serial":"12-channel P100 (12 tubes loaded)", "x-add":"8-channel P20 (96-well then 384-well spacing)",
-      "z-fill":"Adjustable P20 (two dispenses)", "z-diluent":"Adjustable P20",
+      "z-fill":"P100 (split volumes per recipe table)", "z-diluent":"P100 (split volumes per recipe table)",
       "z-serial":"12-channel P100 (8 of 12 channels loaded)", "z-add":"8-channel P20",
       "reservoir":"16-channel P100 (one column at a time)"
     }[name] || "";
@@ -887,7 +890,7 @@
       add("Add Z/common assay mixture", "20 \u00b5L per well, one full plate column at a time, A\u2013P in one pass", fmt(D.numWells*D.additionVolZ,0)+" \u00b5L total", recommendPipette("reservoir"));
     } else if(D.scheme === "variableZ"){
       add("Add Z per block", "10 \u00b5L per well, from that block's Z strip", D.additionVolZ+" \u00b5L/well", recommendPipette("z-add"));
-      add("Add common assay mixture", "10 \u00b5L per well, one full plate column at a time", fmt(D.numWells*D.additionVolCommon,0)+" \u00b5L total", recommendPipette("reservoir"));
+      add("Add common assay mixture", "10 \u00b5L per well (4\u00d7 final assay concentration), one full plate column at a time", fmt(D.numWells*D.additionVolCommon,0)+" \u00b5L total", recommendPipette("reservoir"));
     } else {
       add("Add Z per block", "10 \u00b5L per well, from that block's Z strip or reservoir", D.additionVolZ+" \u00b5L/well", recommendPipette("z-add"));
     }
@@ -1346,7 +1349,6 @@
     Array.prototype.forEach.call(document.querySelectorAll('#plateSvgWrap .well'), function(c){
       c.addEventListener("click", function(){ selectedWell = this.getAttribute("data-well"); run(); });
     });
-    renderFactorTable(D);
     renderWorkingStockTable(D);
     renderRecipeTable(D);
     renderLadderTable(D);
@@ -1406,6 +1408,7 @@
     pre.hidden = false;
   });
 
+  renderFactorTable(computeDesign());
   run();
 })();
 </script>
